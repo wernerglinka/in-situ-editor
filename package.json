@@ -1,0 +1,49 @@
+{
+  "name": "@wernerglinka/in-situ-editor",
+  "version": "0.1.0",
+  "description": "In-site section-builder editor for Metalsmith structured-content sites, with Chrome built-in AI and Netlify Identity publishing. Run `npx @wernerglinka/in-situ-editor` inside a starter-derived site to install it.",
+  "type": "module",
+  "keywords": [
+    "metalsmith",
+    "structured-content",
+    "editor",
+    "chrome-ai",
+    "netlify-identity"
+  ],
+  "author": "werner@glinka.co",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wernerglinka/in-situ-editor.git"
+  },
+  "bin": {
+    "in-situ-editor": "scripts/install-editor.mjs"
+  },
+  "files": [
+    "src/admin/index.html",
+    "lib/layouts/admin.njk",
+    "src/assets/js/editor",
+    "src/assets/js/drafts",
+    "src/assets/js/utils",
+    "src/assets/js/ai",
+    "src/assets/js/export",
+    "src/assets/js/helpers",
+    "src/assets/js/marked",
+    "src/assets/js/turndown",
+    "src/assets/js/prismjs",
+    "src/assets/js/jszip",
+    "src/assets/js/js-yaml",
+    "src/assets/js/browser-fs-access",
+    "src/assets/css/admin-styles.css",
+    "netlify/functions/publish.js",
+    "netlify.toml",
+    "scripts/install-editor.mjs",
+    "scripts/editor-manifest.mjs"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

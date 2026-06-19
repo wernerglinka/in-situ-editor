@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ seo.title }}</title>
+    <meta name="description" content="{{ seo.description }}" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500&family=Open+Sans:wght@300;500&display=swap"
+    />
+    <!-- The site's bundled styles are the base; admin-styles.css only adds the
+         editor-specific styles on top. -->
+    <link rel="stylesheet" href="/assets/main.css" />
+    <link rel="stylesheet" href="/assets/css/admin-styles.css" />
+    <!-- Vendored PrismJS theme for code blocks in the markdown preview. -->
+    <link rel="stylesheet" href="/assets/js/prismjs/themes/prism-okaidia.css" />
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js" defer></script>
+  </head>
+
+  <body class="{{ bodyClass }}">
+    {% include "components/sections/header/header.njk" %}
+
+    {{ contents | safe }}
+
+    {% include "components/sections/footer/footer.njk" %}
+
+    <script type="importmap">
+      {
+        "imports": {
+          "browser-fs-access": "/assets/js/browser-fs-access/index.modern.js"
+        }
+      }
+    </script>
+
+    <script>
+      // Globals the editor expects on window. Hardcoded for POC (single locale, single author).
+      window.APP_LOCALES = ['en'];
+      window.DEFAULT_LOCALE = 'en';
+      window.CURRENT_LOCALE = 'en';
+      window.PATH_PREFIX = '/';
+      window.AUTHORS = [{ name: 'Albert Einstein' }];
+      window.BY_I18N = { en: 'by' };
+    </script>
+
+    <script>
+      // Reveal the editor for signed-in Netlify Identity users; everyone else
+      // gets a sign-in prompt. ?admin=true (or the localStorage flag it sets)
+      // remains as a back door for local dev, where Identity isn't proxied.
+      // Visibility is a courtesy either way — the publish Function is the
+      // security boundary.
+      const urlParams = new URLSearchParams(window.location.search);
+      const adminFromUrl = urlParams.get('admin') === 'true';
+      const adminFromStorage = localStorage.getItem('admin') === 'true';
+
+      if (adminFromUrl) {
+        localStorage.setItem('admin', 'true');
+      } else if (adminFromStorage) {
+        urlParams.set('admin', 'true');
+        window.location.search = urlParams.toString();
+      }
+
+      const isAdmin = adminFromUrl || adminFromStorage;
+      const revealEditor = () => {
+        document.querySelectorAll('.admin-only').forEach((el) => (el.style.display = 'initial'));
+        const prompt = document.getElementById('admin-signin-prompt');
+        if (prompt) prompt.style.display = 'none';
+      };
+
+      if (isAdmin) {
+        revealEditor();
+      } else {
+        const prompt = document.getElementById('admin-signin-prompt');
+        if (prompt) prompt.style.display = 'block';
+
+        // The widget script is deferred, so wire up after load. The editor
+        // module calls netlifyIdentity.init(); by load time currentUser()
+        // reads the cached session, so a missed 'init' event doesn't matter.
+        window.addEventListener('load', () => {
+          const widget = window.netlifyIdentity;
+          if (!widget) return;
+          if (widget.currentUser && widget.currentUser()) revealEditor();
+          widget.on('init', (user) => {
+            if (user) revealEditor();
+          });
+          widget.on('login', () => {
+            widget.close();
+            revealEditor();
+          });
+          const btn = document.getElementById('admin-signin-prompt-btn');
+          if (btn) btn.onclick = () => widget.open('login');
+        });
+      }
+    </script>
+
+    <script src="/assets/js/marked/marked.umd.js"></script>
+    <script src="/assets/js/prismjs/prism.js"></script>
+    <script src="/assets/js/turndown/turndown.js"></script>
+    <script src="/assets/js/jszip/jszip.js"></script>
+    <script src="/assets/js/js-yaml/js-yaml.min.js"></script>
+
+    <!-- Shared site chrome (header/footer) interactivity. SWUP self-disables on
+         the admin body class, so this does not add page transitions here. -->
+    <script src="/assets/main.js"></script>
+
+    <script type="module" src="/assets/js/editor/create-post.js"></script>
+  </body>
+</html>

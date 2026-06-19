@@ -1,9 +1,11 @@
 # @wernerglinka/in-situ-editor
 
 The in-situ editor: an in-site, section-builder admin for Metalsmith
-structured-content sites (cloned from
-`metalsmith2025-structured-content-starter`), with Chrome built-in AI and
+structured-content sites, with Chrome built-in AI and
 Netlify Identity publishing.
+
+[![npm: version][npm-badge]][npm-url]
+[![license: MIT][license-badge]][license-url]
 
 This package is the editor's published, editor-only instance. It is generated
 from the editor's dev fixture by `export-editor.mjs`; do not hand-edit the
@@ -33,3 +35,17 @@ that is the point of an in-situ editor) and prints the remaining wiring:
 6. Build, then open `/admin/?admin=true`. Sign in to edit and publish.
 
 Re-run with `--force` to overwrite an existing install.
+
+## Author
+
+[werner@glinka.co](https://github.com/wernerglinka)
+
+## License
+
+[MIT](LICENSE)
+
+
+[npm-badge]: https://img.shields.io/npm/v/@wernerglinka/in-situ-editor.svg
+[npm-url]: https://www.npmjs.com/package/@wernerglinka/in-situ-editor
+[license-badge]: https://img.shields.io/npm/l/@wernerglinka/in-situ-editor.svg
+[license-url]: LICENSE

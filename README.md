@@ -36,6 +36,10 @@ that is the point of an in-situ editor) and prints the remaining wiring:
 
 Re-run with `--force` to overwrite an existing install.
 
+Add `--dev` to also copy the distribution scripts into the site, turning it into
+a self-contained dev fixture you can develop the editor in and re-export from
+(`node scripts/export-editor.mjs <dir>`). A plain content install omits it.
+
 ## Author
 
 [werner@glinka.co](https://github.com/wernerglinka)

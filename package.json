@@ -38,7 +38,8 @@
     "netlify/functions/publish.js",
     "netlify.toml",
     "scripts/install-editor.mjs",
-    "scripts/editor-manifest.mjs"
+    "scripts/editor-manifest.mjs",
+    "scripts/export-editor.mjs"
   ],
   "publishConfig": {
     "access": "public"

@@ -10,21 +10,27 @@
  *
  * Usage:
  *   # inside a freshly cloned starter-derived site:
- *   npx @wernerglinka/in-situ-editor [--force]
+ *   npx @wernerglinka/in-situ-editor [--force] [--dev]
  *
  *   # or from a checkout of this repo, targeting another site:
- *   node scripts/install-editor.mjs <target-site-dir> [--force]
+ *   node scripts/install-editor.mjs <target-site-dir> [--force] [--dev]
  *
  * The source is this package's own files (SRC_ROOT), so it works whether run
  * from a repo checkout or from node_modules via npx. The target defaults to the
  * current directory. Existing files are skipped unless --force is given. It does
  * not touch the target's metalsmith.js, package.json, or any Netlify dashboard
  * settings — those steps are printed at the end.
+ *
+ * With --dev it also copies the distribution scripts (scripts/) into the site,
+ * turning it into a self-contained dev fixture: the in-site exporter resolves its
+ * source root to that site, so it exports the editor edits you make there rather
+ * than the pristine package. A plain content install (no --dev) stays free of
+ * editor tooling.
  */
 import { cpSync, existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { MANIFEST, NPM_DEPS } from './editor-manifest.mjs';
+import { MANIFEST, NPM_DEPS, SCRIPTS } from './editor-manifest.mjs';
 
 const SRC_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -35,6 +41,7 @@ function fail(message) {
 
 const args = process.argv.slice(2);
 const force = args.includes('--force');
+const dev = args.includes('--dev');
 // Target defaults to the current directory so `npx @wernerglinka/in-situ-editor`
 // installs into the site you are standing in; an explicit path still works.
 const targetArg = args.find((a) => !a.startsWith('--')) || '.';
@@ -55,26 +62,43 @@ for (const marker of ['metalsmith.js', 'package.json']) {
 
 console.log(`\nInstalling the in-situ editor into:\n  ${target}\n`);
 
-let copied = 0;
-let skipped = 0;
-for (const rel of MANIFEST) {
-  const from = join(SRC_ROOT, rel);
-  const to = join(target, rel);
-  if (!existsSync(from)) {
-    console.warn(`  ⚠ source missing, skipped: ${rel}`);
-    continue;
+// Copy a set of package-relative paths into the target, honoring --force for
+// existing files (files and dirs both via cpSync recursive).
+function copyInto(relPaths) {
+  let copied = 0;
+  let skipped = 0;
+  for (const rel of relPaths) {
+    const from = join(SRC_ROOT, rel);
+    const to = join(target, rel);
+    if (!existsSync(from)) {
+      console.warn(`  ⚠ source missing, skipped: ${rel}`);
+      continue;
+    }
+    if (existsSync(to) && !force) {
+      console.log(`  • exists, skipped (use --force): ${rel}`);
+      skipped += 1;
+      continue;
+    }
+    cpSync(from, to, { recursive: true });
+    console.log(`  ✓ ${rel}`);
+    copied += 1;
   }
-  if (existsSync(to) && !force) {
-    console.log(`  • exists, skipped (use --force): ${rel}`);
-    skipped += 1;
-    continue;
-  }
-  cpSync(from, to, { recursive: true });
-  console.log(`  ✓ ${rel}`);
-  copied += 1;
+  return { copied, skipped };
 }
 
-console.log(`\nCopied ${copied} item(s)${skipped ? `, skipped ${skipped} existing` : ''}.`);
+const surface = copyInto(MANIFEST);
+console.log(
+  `\nCopied ${surface.copied} item(s)${surface.skipped ? `, skipped ${surface.skipped} existing` : ''}.`
+);
+
+// --dev: also vendor the distribution scripts so the site is a dev fixture whose
+// in-site exporter exports this site's editor edits (not the pristine package).
+if (dev) {
+  const scripts = copyInto(SCRIPTS);
+  console.log(
+    `\nDev mode: copied ${scripts.copied} script(s)${scripts.skipped ? `, skipped ${scripts.skipped} existing` : ''} into scripts/.`
+  );
+}
 
 /**
  * Adapt the admin layout's chrome includes to the target site.
@@ -175,3 +199,11 @@ Next steps (not automated — they touch your metalsmith.js and Netlify setup):
 `;
 
 console.log(steps);
+
+if (dev) {
+  console.log(`Dev fixture: the distribution scripts are now in this site's scripts/. After
+editing the editor here, re-export an editor-only package from this site with:
+
+     node scripts/export-editor.mjs <editor-only-dir>
+`);
+}

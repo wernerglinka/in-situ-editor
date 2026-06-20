@@ -38,3 +38,17 @@ export const MANIFEST = [
 
 /** Build plugins a consuming site must install for the editor to work. */
 export const NPM_DEPS = ['metalsmith-site-data', 'metalsmith-bundled-components'];
+
+/**
+ * The distribution scripts the package carries: the installer (its bin), this
+ * manifest (imported by both the installer and the exporter at runtime), and the
+ * exporter. The whole toolkit travels with the editor so it never depends on a
+ * particular pre-existing fixture. The exporter folds this into FILES to decide
+ * what the package ships; a `--dev` install copies this same set into a site so
+ * the site becomes a self-contained dev fixture you can edit and re-export from.
+ */
+export const SCRIPTS = [
+  'scripts/install-editor.mjs',
+  'scripts/editor-manifest.mjs',
+  'scripts/export-editor.mjs'
+];

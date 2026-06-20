@@ -1,0 +1,172 @@
+# Editor guide
+
+How to write and publish posts with the in-site editor. This guide tracks
+the editor as it evolves; if something here doesn't match what you see,
+the guide is behind — say so.
+
+## Opening the editor
+
+The editor lives at `/admin/` on the site. It is gated by sign-in: fresh
+visitors see a sign-in prompt, and the editor appears once you sign in
+with your Netlify Identity account (invite-only; ask the site owner for
+an invite).
+
+For local development without Identity, append `?admin=true` to the URL
+(`http://localhost:3000/admin/?admin=true`). This sets a flag in your
+browser so subsequent visits stay unlocked. It only reveals the editing
+surface — publishing still requires sign-in, and the server enforces
+that regardless of what the browser shows.
+
+## Drafts
+
+Drafts live in your browser (localStorage for the text, IndexedDB for
+images). Two consequences worth knowing:
+
+- Drafts are per browser *and* per site. A draft started on the live
+  site won't appear on localhost, or in another browser or profile.
+- Clearing site data in your browser deletes your drafts. Use
+  **💾 Save (.zip)** to keep a copy outside the browser.
+
+The sidebar lists your drafts. **+** starts a new one, **×** deletes one, and **Load Draft** restores a draft from a saved file.
+
+**Load Draft** also opens an existing page for editing: pick a page's
+`.md` (or a `.zip` saved from here) and its sections load into the form
+ready to edit. The editor reads the page's frontmatter, so the title,
+description, date, tags, and every section come back as you left them.
+Anything the editor doesn't manage — a data-driven section like
+`featured-posts`, or any field it doesn't recognize — is shown as preserved
+and written back unchanged when you save, so opening a page never loses
+content.
+
+**Open from site** lists every published page straight from the site, so
+you can edit existing content without first finding its file. It reads a
+snapshot the build emits (`/assets/pages.json`), groups the pages into posts
+and other pages, and on pick loads the page through the same path as a file —
+sections, menu settings, and unmanaged fields all come back intact. Two
+things to know: the list reflects the **last deploy**, so a page you just
+submitted as a PR appears only once that PR merges and the site rebuilds; and
+because the destination slug is derived from the title, renaming the title
+before publishing writes a new file rather than updating the original. To
+update a page in place, keep its title.
+
+## Post or page
+
+The **Page type** selector at the top of the form decides where the content
+publishes and what fields it carries:
+
+- **Blog post** — publishes to `src/blog/<slug>.md`, joins the blog
+  collection, and carries a date, authors, and tags. Images go under
+  `/assets/images/blog/<slug>/`.
+- **Page** — publishes to `src/<slug>.md` (a top-level page like `/about/`),
+  with no date/authors/tags. Turn on **🧭 Show in site menu** and set a menu
+  label and order to put it in the main navigation. Images go under
+  `/assets/images/<slug>/`.
+
+Both are built from the same sections. Switching type changes only which
+fields apply; your sections are untouched.
+
+## Building a post
+
+A post is a stack of sections, composed in the **Sections** area. The
+**Add a section** menu lists every section the site's component library
+defines; each one generates its form straight from that component's schema,
+so it exposes exactly the fields the library section supports. A few of the
+most common:
+
+- **Rich Text** — a title and prose plus the full set of fields the
+  library's text section supports: lead-in, title level (h1–h6), centering,
+  subtitle, any number of call-to-action buttons, and a **Container
+  settings** pane for width, spacing, and background. Prose fields take
+  Markdown (headings, bold, lists, code blocks).
+- **Image Only** — one image with alt text, caption, an optional link, and
+  call-to-action buttons. Type a filename or URL, or use **Choose image**
+  to upload; alt and caption are filled in for you when you upload, and a
+  thumbnail appears.
+- **Multi Media** — a richer media section: a text block plus media that can
+  be an image, video, audio, icon, or Lottie animation, with a reverse-layout
+  option and call-to-action buttons. Pick the media type at the top and the
+  form shows only that media's fields; the others stay hidden until selected.
+- **CTA Banner** — a call-to-action band: title, supporting prose, an
+  optional image, and any number of buttons. Whether it spans full width and
+  whether it uses a dark background are set in **Container settings**, not
+  fixed; a plain banner is contained and light by default.
+
+Add a section from the **Add a section** menu below the stack; reorder with
+↑/↓; remove with ✕.
+
+Each section's form is collapsible. A page opens with every section
+collapsed, so the stack reads as a short list of section types and you can
+see the page's makeup at a glance and jump to the one you want. Click a
+section's header to open or close its form; a section you just added opens
+automatically so you can fill it in.
+
+The drafts panel on the left and the live preview on the right each collapse
+from the toolbar toggles (**Drafts** and **Preview**) above the form.
+Hide both for a full-width, distraction-free editor; the choice is remembered
+per browser.
+
+Every section generates its form from the component library's schema rather
+than from hand-written editor code, which is why each exposes the full set of
+fields its library section supports and is named after that section. The menu
+is built from the schema the build emits, so the editor offers whatever
+components a site defines with no per-type editor code. Within a section,
+repeatable fields like call-to-action buttons add, remove, and reorder the
+same way the section stack does.
+
+Above the sections sit the post's metadata: title, description, date,
+authors, and tags. The title doubles as the post's URL slug
+(`Trying Hard not to Smile` → `/blog/trying-hard-not-to-smile/`), so set
+it before you publish — image URLs are derived from it, and an untitled
+draft files its images under `untitled/`. Everything re-derives live as
+you type, so renaming before publish is harmless.
+
+The right-hand pane shows the document that publishing will commit: the
+post's structured frontmatter in YAML. (An in-browser preview of the
+rendered page is planned to replace it.) It updates a moment after every
+edit. Note that long lines are clipped at the pane's edge.
+
+## Images
+
+Pick an image with the **Choose image** button on an Image section.
+The file can come from anywhere — your desktop, downloads, wherever. The
+editor stores a copy in your browser and, on publish, commits it to the
+site alongside the post at `src/assets/images/blog/<slug>/<filename>`.
+You never need to know the repository layout.
+
+Picking a file that already exists on the site does not link to the
+existing copy — it uploads a fresh one under the post's image folder.
+
+## Publishing
+
+Sign in (Settings → Account, or the sign-in prompt), then:
+
+- **🚀 Publish (as PR)** — available to every signed-in editor. Opens a
+  pull request with the post and its images for the site owner to review
+  and merge.
+- **Publish directly to main** — admins only. Commits straight to the
+  live site; Netlify rebuilds and the post is live in a couple of
+  minutes.
+
+The server checks your role on every publish — hiding or revealing
+buttons in the browser changes nothing.
+
+## Working locally without publishing
+
+Two flows for testing a post against a local build:
+
+- **💾 Save (.zip)** — the archive mirrors the repository layout. Unzip
+  it at the repo root and the post (`src/blog/<slug>.md`) and its images
+  (`src/assets/images/blog/<slug>/`) land exactly where the build wants
+  them.
+- **📋 Copy Markdown** — copies just the frontmatter document. Paste it
+  into `src/blog/<slug>.md`. Fine for text-only posts; if the post has
+  images you must place them at `src/assets/images/blog/<slug>/` by
+  hand, so prefer the zip for image-bearing posts.
+
+## AI features
+
+The editor integrates Chrome's built-in AI (Summarizer, Writer,
+Rewriter, and friends) for suggesting titles, descriptions, and tags and
+for expanding or rewriting prose. The ✨ buttons appear only in Chrome
+with the on-device model provisioned; in any other browser the editor
+works normally without them. Per-section AI assistance is planned.

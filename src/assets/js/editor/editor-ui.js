@@ -56,14 +56,36 @@ export function applyPageType(ui) {
 }
 
 /**
+ * Shows the surface that belongs to the current body mode: the section builder
+ * in sections mode, the Markdown body textarea in content mode.
+ * @param {Object} ui - The UI elements.
+ */
+export function applyBodyMode(ui) {
+  const isContent = (ui.getBodyMode ? ui.getBodyMode() : 'sections') === 'content';
+  for (const el of document.querySelectorAll('.sections-only')) {
+    el.hidden = isContent;
+  }
+  for (const el of document.querySelectorAll('.content-only')) {
+    el.hidden = !isContent;
+  }
+}
+
+/**
  * Populates the page-type selector and menu fields from a draft, then applies
  * the matching field visibility.
  * @param {Object} ui - The UI elements.
  * @param {Object} d - The draft.
  */
 function populatePageType(ui, d) {
-  if (ui.pageTypeSelect) {
-    ui.pageTypeSelect.value = d.pageType === 'page' ? 'page' : 'post';
+  const type = d.pageType === 'page' ? 'page' : 'post';
+  for (const radio of ui.pageTypeRadios || []) {
+    radio.checked = radio.value === type;
+  }
+  if (ui.bodyModeToggle) {
+    ui.bodyModeToggle.checked = d.bodyMode === 'content';
+  }
+  if (ui.hasHeroToggle) {
+    ui.hasHeroToggle.checked = Boolean(d.hasHero);
   }
   if (ui.showInMenuToggle) {
     ui.showInMenuToggle.checked = Boolean(d.showInMenu);
@@ -71,6 +93,7 @@ function populatePageType(ui, d) {
     ui.navIndexInput.value = d.navIndex ?? '';
   }
   applyPageType(ui);
+  applyBodyMode(ui);
 }
 
 /**
@@ -103,6 +126,15 @@ export async function loadDraft(id, ui, renderList, tagEditor) {
 
   if (ui.contentInput) {
     ui.contentInput.value = content;
+  }
+  if (ui.socialImageInput) {
+    ui.socialImageInput.value = d.socialImage || '';
+    ui.canonicalUrlInput.value = d.canonicalUrl || '';
+    ui.bodyClassesInput.value = d.bodyClasses || '';
+    ui.topMessageTextInput.value = d.topMessageText || '';
+    ui.topMessageLinkUrlInput.value = d.topMessageLinkUrl || '';
+    ui.topMessageLinkLabelInput.value = d.topMessageLinkLabel || '';
+    ui.topMessageDismissibleToggle.checked = d.topMessageDismissible !== false;
   }
   loadSections(d);
   ui.aiWriterInput.value = '';

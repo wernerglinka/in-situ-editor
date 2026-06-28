@@ -15,7 +15,7 @@ import { openFromSite } from '../drafts/open-from-site.js';
 import { initEditorActions } from './editor-actions.js';
 import { initEditor } from './editor-init.js';
 import { initSectionBuilder } from './section-builder.js';
-import { sync, renderList, loadDraft, applyPageType } from './editor-ui.js';
+import { sync, renderList, loadDraft, applyPageType, applyBodyMode } from './editor-ui.js';
 
 /**
  * Debounced version of updatePreview to prevent excessive re-renders.
@@ -48,11 +48,36 @@ ui.dateInput.oninput = doSync;
 if (ui.authorsSelect) {
   ui.authorsSelect.onchange = doSync;
 }
-if (ui.pageTypeSelect) {
-  ui.pageTypeSelect.onchange = () => {
+for (const radio of ui.pageTypeRadios || []) {
+  radio.onchange = () => {
     applyPageType(ui);
     doSync();
   };
+}
+if (ui.bodyModeToggle) {
+  ui.bodyModeToggle.onchange = () => {
+    applyBodyMode(ui);
+    doSync();
+  };
+}
+if (ui.hasHeroToggle) {
+  ui.hasHeroToggle.onchange = doSync;
+}
+// Page meta fields all feed the same sync; the dismissible toggle is a change.
+for (const el of [
+  ui.socialImageInput,
+  ui.canonicalUrlInput,
+  ui.bodyClassesInput,
+  ui.topMessageTextInput,
+  ui.topMessageLinkUrlInput,
+  ui.topMessageLinkLabelInput
+]) {
+  if (el) {
+    el.oninput = doSync;
+  }
+}
+if (ui.topMessageDismissibleToggle) {
+  ui.topMessageDismissibleToggle.onchange = doSync;
 }
 if (ui.showInMenuToggle) {
   ui.showInMenuToggle.onchange = () => {

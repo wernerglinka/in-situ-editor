@@ -49,12 +49,21 @@ export async function createNewDraft(ui, loadDraftFn, renderListFn) {
   const newDraft = {
     id,
     pageType: 'post',
+    bodyMode: 'sections',
     title: '',
     description: '',
     date: '',
     authors: [],
     tags: '',
     content: '',
+    socialImage: '',
+    canonicalUrl: '',
+    bodyClasses: '',
+    hasHero: false,
+    topMessageText: '',
+    topMessageLinkUrl: '',
+    topMessageLinkLabel: '',
+    topMessageDismissible: true,
     sections: [],
     imageFiles: [],
     lastModified: Date.now()
@@ -118,6 +127,7 @@ export function updateDraftData(id, ui) {
     return;
   }
   draft.pageType = ui.getPageType ? ui.getPageType() : 'post';
+  draft.bodyMode = ui.getBodyMode ? ui.getBodyMode() : draft.bodyMode || 'sections';
   draft.title = ui.titleInput.value;
   draft.description = ui.descInput.value;
   draft.date = ui.dateInput.value;
@@ -130,6 +140,17 @@ export function updateDraftData(id, ui) {
   }
   if (ui.contentInput) {
     draft.content = ui.contentInput.value;
+  }
+  // Page meta fields
+  if (ui.socialImageInput) {
+    draft.socialImage = ui.socialImageInput.value;
+    draft.canonicalUrl = ui.canonicalUrlInput.value;
+    draft.bodyClasses = ui.bodyClassesInput.value;
+    draft.hasHero = ui.hasHeroToggle ? ui.hasHeroToggle.checked : Boolean(draft.hasHero);
+    draft.topMessageText = ui.topMessageTextInput.value;
+    draft.topMessageLinkUrl = ui.topMessageLinkUrlInput.value;
+    draft.topMessageLinkLabel = ui.topMessageLinkLabelInput.value;
+    draft.topMessageDismissible = ui.topMessageDismissibleToggle.checked;
   }
   if (ui.getSections) {
     draft.sections = ui.getSections();

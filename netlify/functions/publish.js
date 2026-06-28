@@ -132,6 +132,15 @@ export const handler = async (event, context) => {
   if (!/^[a-z0-9-]{1,100}$/.test(slug)) {
     return json(400, { error: 'slug must be 1-100 lowercase letters, digits, or hyphens' });
   }
+  // A content page (the simple layout) carries the page in its Markdown body,
+  // so refuse to publish a blank one. Section pages legitimately ship an empty
+  // body — the page lives entirely in frontmatter — so this only fires for the
+  // simple layout.
+  const bodyMatch = markdown.match(/^---\n[\s\S]*?\n---\n?([\s\S]*)$/);
+  const body = bodyMatch ? bodyMatch[1] : '';
+  if (/\blayout:\s*['"]?pages\/simple\.njk['"]?/.test(markdown) && !body.trim()) {
+    return json(400, { error: 'A content page must have a non-empty Markdown body' });
+  }
   if (Array.isArray(images)) {
     for (const img of images) {
       if (img && img.name && !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,200}$/.test(img.name)) {

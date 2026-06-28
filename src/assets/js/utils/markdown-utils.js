@@ -100,15 +100,60 @@ const slugify = (title) =>
  * Page-type registry. Each type maps to its output directory (used by the
  * publish Function) and the published image directory root. A blog post lives
  * under `src/blog/` and carries a card + tags + collection membership; a page
- * lives at the top level and carries neither. Both share the sections layout.
+ * lives at the top level and carries neither. The layout depends on the draft's
+ * body mode (see bodyModeOf), not its page type: a section-built page renders
+ * with the sections layout, a content-body page with the simple layout.
  */
 export const PAGE_TYPES = {
   post: { dir: 'src/blog', imageRoot: '/assets/images/blog', layout: 'pages/sections.njk' },
   page: { dir: 'src', imageRoot: '/assets/images', layout: 'pages/sections.njk' }
 };
 
+/** The layout for a content-body page; section-built pages use PAGE_TYPES.layout. */
+export const CONTENT_LAYOUT = 'pages/simple.njk';
+
 /** Resolves a draft's page type, defaulting to a blog post. */
 export const pageTypeOf = (draft) => (draft && draft.pageType === 'page' ? 'page' : 'post');
+
+/** Resolves a draft's body mode, defaulting to the section builder. */
+export const bodyModeOf = (draft) => (draft && draft.bodyMode === 'content' ? 'content' : 'sections');
+
+/** Default body class per body mode, used when the author leaves the field blank. */
+const DEFAULT_BODY_CLASS = { content: 'content-page', sections: 'sections-page' };
+
+/** The page's body class: the author's value, else the body-mode default. */
+const bodyClassesOf = (draft, isContent) =>
+  (draft.bodyClasses || '').trim() || DEFAULT_BODY_CLASS[ isContent ? 'content' : 'sections' ];
+
+/**
+ * The top-message banner block, or null when there is no message. The message
+ * text is Markdown (rendered by the header template); the link is optional.
+ * @param {Object} draft - The draft.
+ * @return {Object|null} `{ text, link?, dismissible }` or null.
+ */
+function topMessageOf(draft) {
+  const text = (draft.topMessageText || '').trim();
+  if (!text) {
+    return null;
+  }
+  const url = (draft.topMessageLinkUrl || '').trim();
+  const label = (draft.topMessageLinkLabel || '').trim();
+  return {
+    text,
+    ...(url ? { link: { url, label: label || url } } : {}),
+    dismissible: draft.topMessageDismissible !== false
+  };
+}
+
+/**
+ * Unmanaged top-level keys carried onto the emitted page from the source. The
+ * editor now manages every key a starter page uses (bodyClasses, hasHero,
+ * topMessage, navigation, seo, ...), so `extra` is normally empty; it only
+ * preserves a genuinely unknown key so an edited page never silently loses it.
+ * @param {Object} draft - The draft.
+ * @return {Object} The keys to spread into the frontmatter.
+ */
+const carriedExtra = (draft) => (draft.extra && typeof draft.extra === 'object' ? draft.extra : {});
 
 /**
  * The post-only frontmatter blocks: the card (collections sort on card.date,
@@ -149,16 +194,17 @@ function pageBlocks(draft, title) {
  * Generates a structured-content markdown document (frontmatter only,
  * empty body) from draft data. The shape depends on the draft's page type:
  * a post carries seo + card + tags, a page carries seo and (optionally) a
- * navigation block. Top-level frontmatter the editor does not manage is
- * carried through `draft.extra` so an edited page never loses keys it does
- * not understand (navigation, bodyClasses, hasHero, ...).
+ * navigation block. The page-level metadata (social image, canonical URL,
+ * body classes, hasHero, top message, menu) is edited in dedicated form
+ * sections. Any genuinely unknown top-level key is carried through
+ * `draft.extra` so an edited page never silently loses it.
  *
  * @param {Object} draft - The draft object.
  * @param {string} title - The title.
  * @param {string} description - The description.
  * @param {string} date - The date (posts only).
  * @param {string} tagsValue - Comma-separated tags string (posts only).
- * @param {string} content - Unused; kept for signature compatibility.
+ * @param {string} content - The markdown body (content mode only; empty in sections mode).
  * @param {Array<Object>} [classifierResults=[]] - AI classifier results (posts only).
  * @return {string} The formatted Markdown string.
  */
@@ -168,6 +214,7 @@ export function generateMarkdown(draft, title, description, date, tagsValue, con
   const cfg = PAGE_TYPES[type];
   const imageBase = `${cfg.imageRoot}/${slug}`;
   const isPost = type === 'post';
+  const isContent = bodyModeOf(draft) === 'content';
 
   const tags = tagsValue
     .split(',')
@@ -175,27 +222,41 @@ export function generateMarkdown(draft, title, description, date, tagsValue, con
     .filter((t) => t);
 
   const editorSections = Array.isArray(draft.sections) ? draft.sections : [];
-  const thumbnail = firstSectionImage(editorSections, getSectionFields, imageBase);
+  // The social image: the author's explicit Page-meta value wins; otherwise a
+  // section page derives one from its first section image (a content page has
+  // no sections to derive from). It drives both seo.socialImage and, for posts,
+  // the card thumbnail, so there is a single source of truth.
+  const socialImage =
+    (draft.socialImage || '').trim() ||
+    (isContent ? '' : firstSectionImage(editorSections, getSectionFields, imageBase));
+  const topMessage = topMessageOf(draft);
 
   const doc = {
-    layout: cfg.layout,
+    layout: isContent ? CONTENT_LAYOUT : cfg.layout,
     draft: false,
     ...(isPost ? { bodyClass: '' } : {}),
-    // Top-level keys the editor doesn't manage, preserved from the source page.
-    ...(draft.extra && typeof draft.extra === 'object' ? draft.extra : {}),
+    bodyClasses: bodyClassesOf(draft, isContent),
+    // hasHero drives section-layout hero styling; only meaningful (and only
+    // emitted) for a section page that opts in.
+    ...(!isContent && draft.hasHero ? { hasHero: true } : {}),
+    ...(topMessage ? { topMessage } : {}),
+    // Any genuinely unknown top-level key from the source page, preserved.
+    ...carriedExtra(draft),
     seo: {
       title: title || '',
       description: description || '',
-      socialImage: thumbnail,
-      canonicalOverwrite: ''
+      socialImage,
+      canonicalURL: (draft.canonicalUrl || '').trim()
     },
     ...(isPost
-      ? postBlocks(draft, title, description, date, tags, thumbnail, classifierResults)
+      ? postBlocks(draft, title, description, date, tags, socialImage, classifierResults)
       : pageBlocks(draft, title)),
-    sections: editorSections.map((s) => emitSection(s, imageBase))
+    // Content mode omits sections entirely; the body carries the page.
+    ...(isContent ? {} : { sections: editorSections.map((s) => emitSection(s, imageBase)) })
   };
 
-  return `---\n${toYaml(doc)}\n---\n`;
+  const body = isContent ? `${(content || '').trimEnd()}\n` : '';
+  return `---\n${toYaml(doc)}\n---\n${body}`;
 }
 
 /**

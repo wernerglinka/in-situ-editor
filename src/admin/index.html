@@ -122,15 +122,6 @@ seo:
       </div>
       <form id="post-form">
         <div class="form-group">
-          <label for="post-page-type">Page type</label>
-          <select id="post-page-type">
-            <option value="post">Blog post</option>
-            <option value="page">Page</option>
-          </select>
-          <p class="field-hint" id="page-type-hint"></p>
-        </div>
-
-        <div class="form-group">
           <label for="post-title">Title</label>
           <div class="input-with-action">
             <input type="text" id="post-title" required placeholder="My Awesome Post" />
@@ -162,57 +153,147 @@ seo:
           </div>
         </div>
 
-        <div class="form-group post-only">
-          <label for="post-date">Date</label>
-          <input type="date" id="post-date" />
-        </div>
-
-        <div class="form-group post-only">
-          <label for="post-authors">Authors</label>
-          <select id="post-authors" multiple size="1">
-            <option value="Albert Einstein">Albert Einstein</option>
-          </select>
-        </div>
-
-        <div class="form-group post-only">
-          <label for="tag-input">Tags</label>
-          <div class="tag-container">
-            <div id="tag-pills" class="tag-pills"></div>
-            <div class="tag-input-wrapper">
-              <input type="text" id="tag-input" placeholder="Add tag and press Enter..." />
-              <button
-                type="button"
-                id="ai-suggest-tags-btn"
-                class="button ai-button"
-                style="display: none"
-                title="Suggest tags using AI"
-              >
-                AI
-              </button>
-            </div>
-            <label class="ai-toggle-label only-existing-tags-label">
-              Only Allow Existing Tags
-              <input type="checkbox" switch id="ai-only-existing-tags-toggle" />
+        <div class="form-group">
+          <span class="field-label">Page type</span>
+          <div class="radio-group" role="radiogroup" aria-label="Page type">
+            <label class="radio-option">
+              <input type="radio" name="page-type" value="post" checked /> Blog post
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="page-type" value="page" /> Page
             </label>
           </div>
-          <input type="hidden" id="post-tags" />
-        </div>
-
-        <div class="form-group page-only">
-          <label class="ai-toggle-label">
-            Show in site menu
-            <input type="checkbox" switch id="page-show-in-menu" />
-          </label>
-        </div>
-
-        <div class="form-group page-only" id="page-nav-fields">
-          <label for="page-nav-label">Menu label</label>
-          <input type="text" id="page-nav-label" placeholder="About" />
-          <label for="page-nav-index">Menu order</label>
-          <input type="number" id="page-nav-index" min="0" step="1" placeholder="0" />
+          <p class="field-hint" id="page-type-hint"></p>
         </div>
 
         <div class="form-group">
+          <label class="ai-toggle-label">
+            Simple page (one Markdown body, no sections)
+            <input type="checkbox" switch id="post-body-mode" />
+          </label>
+        </div>
+
+        <details class="form-section page-only" id="navigation-section">
+          <summary>Navigation</summary>
+          <div class="form-section-content">
+            <div class="form-group">
+              <label class="ai-toggle-label">
+                Show in site menu
+                <input type="checkbox" switch id="page-show-in-menu" />
+              </label>
+            </div>
+            <div class="form-group" id="page-nav-fields">
+              <label for="page-nav-label">Menu label</label>
+              <input type="text" id="page-nav-label" placeholder="About" />
+              <label for="page-nav-index">Menu order</label>
+              <input type="number" id="page-nav-index" min="0" step="1" placeholder="0" />
+            </div>
+          </div>
+        </details>
+
+        <details class="form-section">
+          <summary>Page meta</summary>
+          <div class="form-section-content">
+            <div class="form-group">
+              <label for="post-body-classes">Body classes</label>
+              <p class="field-hint">
+                Classes added to the page's &lt;body&gt; element. Defaults to sections-page / content-page.
+              </p>
+              <input type="text" id="post-body-classes" placeholder="sections-page" />
+            </div>
+
+            <div class="form-group sections-only">
+              <label class="ai-toggle-label">
+                Has hero (page opens with a hero section)
+                <input type="checkbox" switch id="post-has-hero" />
+              </label>
+            </div>
+          </div>
+        </details>
+
+        <details class="form-section">
+          <summary>Top message</summary>
+          <div class="form-section-content">
+            <div class="form-group top-message-group">
+              <p class="field-hint">
+                A dismissible banner above the header. The message supports Markdown, plus an optional link.
+              </p>
+              <label for="post-top-message-text">Message</label>
+              <textarea id="post-top-message-text" rows="2" placeholder="**New:** five components just landed."></textarea>
+              <label for="post-top-message-link-url">Link URL</label>
+              <input type="text" id="post-top-message-link-url" placeholder="/references/" />
+              <label for="post-top-message-link-label">Link label</label>
+              <input type="text" id="post-top-message-link-label" placeholder="View the library" />
+              <label class="ai-toggle-label">
+                Dismissible
+                <input type="checkbox" switch id="post-top-message-dismissible" checked />
+              </label>
+            </div>
+          </div>
+        </details>
+
+        <details class="form-section post-only" open>
+          <summary>Blog post</summary>
+          <div class="form-section-content">
+            <div class="form-group">
+              <label for="post-date">Date</label>
+              <input type="date" id="post-date" />
+            </div>
+
+            <div class="form-group">
+              <label for="post-authors">Authors</label>
+              <select id="post-authors" multiple size="1">
+                <option value="Albert Einstein">Albert Einstein</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="tag-input">Tags</label>
+              <div class="tag-container">
+                <div id="tag-pills" class="tag-pills"></div>
+                <div class="tag-input-wrapper">
+                  <input type="text" id="tag-input" placeholder="Add tag and press Enter..." />
+                  <button
+                    type="button"
+                    id="ai-suggest-tags-btn"
+                    class="button ai-button"
+                    style="display: none"
+                    title="Suggest tags using AI"
+                  >
+                    AI
+                  </button>
+                </div>
+                <label class="ai-toggle-label only-existing-tags-label">
+                  Only Allow Existing Tags
+                  <input type="checkbox" switch id="ai-only-existing-tags-toggle" />
+                </label>
+              </div>
+              <input type="hidden" id="post-tags" />
+            </div>
+          </div>
+        </details>
+
+        <details class="form-section">
+          <summary>SEO</summary>
+          <div class="form-section-content">
+            <div class="form-group">
+              <label for="post-social-image">Social image</label>
+              <p class="field-hint">
+                The share/social image (Open Graph). For posts it also sets the card thumbnail.
+                Leave blank to use the first section image.
+              </p>
+              <input type="text" id="post-social-image" placeholder="/assets/images/blog/my-post/cover.jpg" />
+            </div>
+
+            <div class="form-group">
+              <label for="post-canonical-url">Canonical URL</label>
+              <p class="field-hint">Override the canonical URL. Leave blank to use the page's own URL.</p>
+              <input type="text" id="post-canonical-url" placeholder="https://example.com/path/" />
+            </div>
+          </div>
+        </details>
+
+        <div class="form-group sections-only">
           <label>Sections</label>
           <p class="field-hint">
             Build the page from sections. Add, reorder, and remove below. Prose fields take Markdown.
@@ -225,10 +306,15 @@ seo:
               <option value="">+ Add a section…</option>
             </select>
           </div>
-          <!-- Hidden legacy body field: keeps dormant AI/paste modules
-					     that reference #post-content from crashing until they are
-					     re-scoped to sections. -->
-          <textarea id="post-content" style="display: none"></textarea>
+        </div>
+
+        <!-- The Markdown body. In sections mode this group is hidden, but the
+             textarea stays in the DOM so the AI/paste modules that reference
+             #post-content never crash. -->
+        <div class="form-group content-only">
+          <label for="post-content">Content</label>
+          <p class="field-hint">Write the page body in Markdown. It renders through the simple layout.</p>
+          <textarea id="post-content" rows="18"></textarea>
         </div>
 
         <div class="form-group ai-writer-section" style="display: none">

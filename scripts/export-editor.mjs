@@ -171,6 +171,14 @@ a self-contained dev fixture you can develop the editor in and re-export from
 
 [werner@glinka.co](https://github.com/wernerglinka)
 
+## Acknowledgments
+
+The initial inspiration for this editor came from Google Chrome's
+[starter-extended-blog](https://github.com/GoogleChrome/starter-extended-blog) —
+its in-site authoring model (editing content in place within the running site),
+its publish-from-browser flow (composing in the browser and committing back to
+the repo), and its use of Chrome's built-in AI for writing assistance.
+
 ## License
 
 [MIT](LICENSE)

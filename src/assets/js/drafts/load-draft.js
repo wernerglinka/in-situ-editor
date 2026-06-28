@@ -14,7 +14,7 @@ import { hydrateSections } from '../editor/schema/hydrate.js';
 /** Top-level frontmatter keys the editor manages; everything else is kept in
  * `draft.extra` so an edited page round-trips its unknown keys unchanged. */
 const MANAGED_KEYS = new Set([
-  'layout', 'draft', 'bodyClass', 'seo', 'card', 'tags',
+  'layout', 'draft', 'bodyClass', 'bodyClasses', 'hasHero', 'topMessage', 'seo', 'card', 'tags',
   'ad_categories', 'ad_confidences', 'navigation', 'sections'
 ]);
 
@@ -39,18 +39,45 @@ function navFields(nav) {
   };
 }
 
+/** Spreads a `topMessage` block back into the draft's flat editor fields. */
+function topMessageFields(tm) {
+  const m = tm || {};
+  const link = m.link || {};
+  return {
+    topMessageText: m.text || '',
+    topMessageLinkUrl: link.url || '',
+    topMessageLinkLabel: link.label || '',
+    topMessageDismissible: m.dismissible !== false
+  };
+}
+
 export function draftFromMetadata(metadata, content, id) {
   const m = metadata || {};
   const card = m.card || {};
   const seo = m.seo || {};
   const pageType = card.title || card.date || Array.isArray(m.tags) ? 'post' : 'page';
+  // A page is content-bodied when it renders with the simple layout, or (as a
+  // fallback for hand-authored files) when it has a body and no sections.
+  const bodyMode =
+    m.layout === 'pages/simple.njk' || (!Array.isArray(m.sections) && Boolean(content && content.trim()))
+      ? 'content'
+      : 'sections';
   const extra = Object.fromEntries(Object.entries(m).filter(([ k ]) => !MANAGED_KEYS.has(k)));
   return {
     id,
     pageType,
+    bodyMode,
     title: card.title || seo.title || m.title || '',
     description: seo.description || m.description || '',
     date: card.date || m.date || '',
+    // Page meta fields. socialImage is the single source for both the social
+    // image and (for posts) the card thumbnail; bodyClasses and the top message
+    // round-trip through their own fields now rather than the `extra` bag.
+    socialImage: seo.socialImage || card.thumbnail || '',
+    canonicalUrl: seo.canonicalURL || '',
+    bodyClasses: m.bodyClasses || '',
+    hasHero: m.hasHero === true,
+    ...topMessageFields(m.topMessage),
     tags: Array.isArray(m.tags) ? m.tags.join(', ') : m.tags || '',
     authors: Array.isArray(card.author) ? card.author : [],
     ...navFields(m.navigation || null),

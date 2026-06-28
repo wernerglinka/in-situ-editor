@@ -15,6 +15,7 @@ import { openFromSite } from '../drafts/open-from-site.js';
 import { initEditorActions } from './editor-actions.js';
 import { initEditor } from './editor-init.js';
 import { initSectionBuilder } from './section-builder.js';
+import { attachMarkdownOverlay } from './markdown-overlay.js';
 import { sync, renderList, loadDraft, applyPageType, applyBodyMode } from './editor-ui.js';
 
 /**
@@ -89,6 +90,7 @@ if (ui.showInMenuToggle) {
 }
 if (ui.contentInput) {
   ui.contentInput.oninput = doSync;
+  attachMarkdownOverlay(ui.contentInput, 'Page content');
 }
 window.addEventListener('classifier-updated', doSync);
 

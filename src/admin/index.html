@@ -473,3 +473,19 @@ seo:
     </div>
   </form>
 </dialog>
+
+<!-- Full-screen Markdown editor. The host textarea is replaced in place by the
+     single EasyMDE instance (see markdown-overlay.js). Save/Cancel resolve the
+     open() promise; the caller writes the value back to its own field. -->
+<dialog id="markdown-editor-dialog" class="markdown-editor-dialog">
+  <div class="markdown-editor-head">
+    <h2 id="markdown-editor-title">Edit Markdown</h2>
+    <div class="dialog-actions">
+      <button type="button" id="markdown-editor-cancel" class="button tertiary small">Cancel</button>
+      <button type="button" id="markdown-editor-save" class="button primary small">Save</button>
+    </div>
+  </div>
+  <div class="markdown-editor-body">
+    <textarea id="markdown-editor-host"></textarea>
+  </div>
+</dialog>

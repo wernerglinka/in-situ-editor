@@ -12,6 +12,7 @@
 
 import { isLeaf, isArrayField, isGroup, materializeDefaults } from './field-utils.js';
 import { getDataArray, getCollectionNames } from './site-data-loader.js';
+import { attachMarkdownOverlay } from '../markdown-overlay.js';
 
 /**
  * The { value, label } options for a select/multiselect. A `source` resolves
@@ -88,8 +89,10 @@ function renderLeaf(node, obj, key, onChange, ctx) {
  * Widgets with their own layout (image, checkbox, multiselect) are not here.
  */
 const INPUT_BUILDERS = {
-  /** Multiline markdown/prose. */
+  /** Multiline markdown/prose, with an Expand button into the overlay editor. */
   markdown(node, obj, key, onChange) {
+    const wrap = document.createElement('div');
+    wrap.className = 'markdown-field';
     const input = document.createElement('textarea');
     input.rows = 6;
     input.value = obj[key] ?? '';
@@ -97,7 +100,11 @@ const INPUT_BUILDERS = {
       obj[key] = input.value;
       onChange();
     };
-    return input;
+    wrap.append(input);
+    // The overlay writes back by dispatching `input` on the textarea, so the
+    // oninput above is what commits the value either way.
+    attachMarkdownOverlay(input, node.label || key);
+    return wrap;
   },
   /** Single choice from node.enum, or from node.source (site data). */
   select(node, obj, key, onChange) {

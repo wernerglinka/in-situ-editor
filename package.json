@@ -33,6 +33,7 @@
     "src/assets/js/prismjs",
     "src/assets/js/jszip",
     "src/assets/js/js-yaml",
+    "src/assets/js/easymde",
     "src/assets/js/browser-fs-access",
     "src/assets/css/admin-styles.css",
     "netlify/functions/publish.js",

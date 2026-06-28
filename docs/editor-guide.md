@@ -156,6 +156,21 @@ post's structured frontmatter in YAML. (An in-browser preview of the
 rendered page is planned to replace it.) It updates a moment after every
 edit. Note that long lines are clipped at the pane's edge.
 
+## The Markdown editor
+
+Every Markdown field — a section's prose fields and the **Content** body in
+simple-page mode — is a plain text box you can type into directly. Below each
+one is an **⤢ Expand** button that opens a full-screen Markdown editor with a
+small toolbar (bold, italic, heading, quote, bulleted and numbered lists,
+link) and a preview toggle. Use it when a field needs more room than the
+inline box gives, or when you want the toolbar and live preview; keep typing in
+the box for quick edits.
+
+The overlay edits only that one field. **Save** writes your text back to the
+field and updates the preview; **Cancel** (or pressing Escape) closes it and
+leaves the field untouched. Nothing is committed to the page until you save the
+draft or publish as usual.
+
 ## Images
 
 Pick an image with the **Choose image** button on an Image section.

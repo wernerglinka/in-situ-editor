@@ -28,6 +28,7 @@ export const MANIFEST = [
   'src/assets/js/prismjs',
   'src/assets/js/jszip',
   'src/assets/js/js-yaml',
+  'src/assets/js/easymde',
   'src/assets/js/browser-fs-access',
   // Admin styles (layered over the site's main.css)
   'src/assets/css/admin-styles.css',

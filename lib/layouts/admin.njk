@@ -14,8 +14,11 @@
       href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500&family=Open+Sans:wght@300;500&display=swap"
     />
     <!-- The site's bundled styles are the base; admin-styles.css only adds the
-         editor-specific styles on top. -->
+         editor-specific styles on top. Vendored sheets load before admin-styles
+         so the admin's own layer wins on equal-specificity collisions. -->
     <link rel="stylesheet" href="/assets/main.css" />
+    <!-- Vendored EasyMDE, scoped to the Markdown overlay dialog. -->
+    <link rel="stylesheet" href="/assets/js/easymde/easymde.min.css" />
     <link rel="stylesheet" href="/assets/css/admin-styles.css" />
     <!-- Vendored PrismJS theme for code blocks in the markdown preview. -->
     <link rel="stylesheet" href="/assets/js/prismjs/themes/prism-okaidia.css" />
@@ -102,6 +105,7 @@
     <script src="/assets/js/turndown/turndown.js"></script>
     <script src="/assets/js/jszip/jszip.js"></script>
     <script src="/assets/js/js-yaml/js-yaml.min.js"></script>
+    <script src="/assets/js/easymde/easymde.min.js"></script>
 
     <!-- Shared site chrome (header/footer) interactivity. SWUP self-disables on
          the admin body class, so this does not add page transitions here. -->

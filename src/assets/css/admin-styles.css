@@ -1080,3 +1080,111 @@ dialog p {
     border-color: #444;
   }
 }
+
+/* ---- Markdown field + overlay editor ---------------------------------- */
+
+/* The inline field: a plain textarea with an Expand button beneath it. */
+.markdown-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.markdown-field textarea {
+  width: 100%;
+}
+
+.md-expand-btn {
+  margin-top: 0.35rem;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.8rem;
+  color: var(--color-text);
+  background: none;
+  border: 1px solid var(--color-border-light);
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.md-expand-btn:hover {
+  opacity: 1;
+  background: var(--color-surface-hover);
+}
+
+/* The overlay dialog overrides the small base dialog box: it is a tall,
+   flex-column shell whose body lets the EasyMDE instance fill the height. */
+.markdown-editor-dialog {
+  width: min(900px, 92vw);
+  max-width: 92vw;
+  height: 82vh;
+  padding: 0;
+}
+
+/* Only lay the dialog out when open; otherwise this author-origin display would
+   override the UA `dialog:not([open]) { display: none }` and show it on load. */
+.markdown-editor-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.markdown-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.markdown-editor-head h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.markdown-editor-head .dialog-actions {
+  margin-top: 0;
+}
+
+.markdown-editor-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.markdown-editor-dialog .EasyMDEContainer {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.markdown-editor-dialog .CodeMirror {
+  flex: 1;
+  min-height: 0;
+}
+
+/* The toolbar mixes text letters/numbers (B, I, H, 1.) with inline Feather
+   SVGs; give the text buttons weight/italics and size the SVG icons. */
+.markdown-editor-dialog .editor-toolbar button {
+  min-width: 30px;
+  font-weight: 600;
+  /* EasyMDE sets no color, so the buttons inherit a muted gray. The editor
+     surface is always light (even in dark mode), so use a fixed dark value
+     rather than --color-text, which flips to white and would disappear. */
+  color: #161616;
+}
+
+.markdown-editor-dialog .editor-toolbar button[title='Italic'] {
+  font-style: italic;
+}
+
+.markdown-editor-dialog .editor-toolbar button svg {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  /* A global svg rule paints icons the primary red; inherit the dark button
+     color instead so the icons match the B/I/H/1. letters. */
+  color: inherit;
+}

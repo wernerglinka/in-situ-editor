@@ -1,6 +1,6 @@
 {
   "name": "@wernerglinka/in-situ-editor",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "In-site section-builder editor for Metalsmith structured-content sites, with Chrome built-in AI and Netlify Identity publishing. Run `npx @wernerglinka/in-situ-editor` inside a starter-derived site to install it.",
   "type": "module",
   "keywords": [

@@ -12,12 +12,14 @@ h1 {
   text-align: center;
 }
 
-/* The shared site header is position:fixed, so clear its height (it has no
+/* 
+  The shared site header is position:fixed, so clear its height (it has no
    hero to sit under on the admin page) before the editor content begins. The
    offset tracks the header's own responsive clamp. The body spans the full
    viewport (overriding the base stylesheet's centered max-width) so the
    header and footer stretch edge to edge; the editor content below carries
-   its own width constraint. */
+   its own width constraint. 
+*/
 body.admin {
   max-width: none;
   margin: 0;
@@ -28,8 +30,10 @@ body.admin {
   display: grid;
   grid-template-columns: 250px minmax(0, 1fr) minmax(0, 1fr);
   gap: 2rem;
-  /* Width constraint moved here from body so the footer can span the viewport;
-     centered, with generous space above the footer. */
+  /* 
+    Width constraint moved here from body so the footer can span the viewport;
+     centered, with generous space above the footer. 
+  */
   max-width: 90em;
   margin: 2rem auto 5rem;
 }
@@ -40,9 +44,11 @@ body.admin {
   max-width: 50rem;
 }
 
-/* Collapsible panes (toggled from the editor toolbar). A collapsed pane is
+/* 
+  Collapsible panes (toggled from the editor toolbar). A collapsed pane is
    removed from flow so the grid reflows the remaining columns with no empty
-   track or stray gap left behind. */
+   track or stray gap left behind. 
+*/
 .editor-container.no-sidebar .editor-sidebar,
 .editor-container.no-preview .editor-preview {
   display: none;
@@ -65,6 +71,7 @@ body.admin {
   gap: 0.5rem;
   justify-content: flex-end;
   margin-bottom: 1rem;
+  border: none;
 }
 
 .pane-toggle {
@@ -116,10 +123,12 @@ body.admin {
   margin: 0;
 }
 
-/* The "new draft" add button is circular. The site's button partial may not
+/* 
+  The "new draft" add button is circular. The site's button partial may not
    ship a `.round` modifier (it is editor chrome, not a site button), so carry
    the shape here rather than relying on the host stylesheet. The id beats the
-   host `.button` rules on specificity. */
+   host `.button` rules on specificity. 
+*/
 #new-draft-btn {
   flex-shrink: 0;
   width: 32px;
@@ -436,17 +445,16 @@ body.admin {
 
 .form-group label,
 .ai-toggle-label {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
   font-weight: bold;
   font-size: 0.85rem;
 }
 
-/* A checkbox/toggle inside a label sits next to its text, not pushed to the
+/* 
+  A checkbox/toggle inside a label sits next to its text, not pushed to the
    far edge by space-between on wide forms. The `.form-group` variant is needed
-   so it outranks the `.form-group label` rule above. */
+   so it outranks the `.form-group label` rule above. 
+*/
 .ai-toggle-label,
 .form-group .ai-toggle-label {
   justify-content: flex-start;
@@ -601,6 +609,7 @@ body.admin {
   color: var(--color-text);
   font-family: inherit;
   font-size: 0.85rem;
+  margin-bottom: 1rem;
 }
 
 .form-group select {
@@ -820,7 +829,6 @@ dialog p {
 .section-card {
   border: 1px solid var(--color-border-light);
   border-radius: 6px;
-  background: var(--color-background-light);
   overflow: hidden;
 }
 
@@ -829,8 +837,13 @@ dialog p {
   justify-content: space-between;
   align-items: center;
   padding: 0.4rem 0.75rem;
-  background: rgba(0, 0, 0, 0.05);
   border-bottom: 1px solid var(--color-border-light);
+  cursor: pointer;
+}
+
+.section-card-header:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
 }
 
 .section-card-type {
@@ -841,11 +854,7 @@ dialog p {
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  background: transparent;
-  border: none;
-  padding: 0.15rem 0;
   color: inherit;
-  cursor: pointer;
 }
 
 .section-card-caret {
@@ -878,6 +887,7 @@ dialog p {
 }
 
 .section-card-body {
+  background-color: var(--color-background-extra-light);
   padding: 0.75rem;
 }
 
@@ -924,11 +934,6 @@ dialog p {
   cursor: pointer;
 }
 
-.section-add-select:hover {
-  background: var(--color-secondary);
-  border-color: var(--color-secondary);
-}
-
 /* The dropdown list inherits the control colors otherwise; keep options
    readable on the native popup. */
 .section-add-select option {
@@ -953,6 +958,21 @@ dialog p {
   letter-spacing: 0.04em;
   margin-bottom: 0.5rem;
   opacity: 0.75;
+}
+
+/* Groups are <details> disclosures; the summary is the toggle. */
+.section-field-group > summary {
+  cursor: pointer;
+}
+
+.section-field-group > summary:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* A collapsed group keeps no trailing gap below its lone summary. */
+.section-field-group:not([open]) > summary {
+  margin-bottom: 0;
 }
 
 .section-field-checkbox .checkbox-label {
@@ -983,22 +1003,39 @@ dialog p {
   margin-bottom: 0.75rem;
 }
 
+/* Array entries are collapsible cards (like a section card): the header is the
+   toggle, the body holds the form, and the controls sit beside the label. */
 .section-array-item {
-  position: relative;
   border: 1px solid var(--color-border-light);
   border-radius: 4px;
-  padding: 0.6rem;
-  padding-top: 1.8rem;
   margin-bottom: 0.5rem;
   background: rgba(0, 0, 0, 0.02);
+  overflow: hidden;
 }
 
-.section-array-item-controls {
-  position: absolute;
-  top: 0.35rem;
-  right: 0.35rem;
+.section-array-item-header {
   display: flex;
-  gap: 0.25rem;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+}
+
+.section-array-item-header:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.section-array-item.is-collapsed .section-card-caret {
+  transform: rotate(0deg);
+}
+
+.section-array-item.is-collapsed .section-array-item-body {
+  display: none;
+}
+
+.section-array-item-body {
+  padding: 0 0.6rem 0.6rem;
 }
 
 .sections-empty {
@@ -1050,25 +1087,28 @@ dialog p {
    that groups them visually. */
 .form-section {
   border-top: 1px solid var(--color-border-light);
+
+  > summary {
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.9rem;
+    padding: 0.6rem 0;
+  }
+
+  &[open] {
+    > summary {
+      margin-bottom: 0.5rem;
+    }
+
+    > .form-section-content {
+      background: var(--color-background-extra-light);
+      border-radius: 6px;
+      padding: 0.85rem 0.85rem 0.1rem;
+      margin-bottom: 1rem;
+    }
+  }
 }
 
-.form-section > summary {
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 0.9rem;
-  padding: 0.6rem 0;
-}
-
-.form-section[open] > summary {
-  margin-bottom: 0.5rem;
-}
-
-.form-section[open] > .form-section-content {
-  background: var(--color-background-light);
-  border: 1px solid var(--color-border-light);
-  border-radius: 6px;
-  padding: 0.85rem 0.85rem 0.1rem;
-}
 
 @media (prefers-color-scheme: dark) {
   .form-section {
@@ -1118,73 +1158,83 @@ dialog p {
   max-width: 92vw;
   height: 82vh;
   padding: 0;
-}
 
-/* Only lay the dialog out when open; otherwise this author-origin display would
+  /* Only lay the dialog out when open; otherwise this author-origin display would
    override the UA `dialog:not([open]) { display: none }` and show it on load. */
-.markdown-editor-dialog[open] {
-  display: flex;
-  flex-direction: column;
+  &[open] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .markdown-editor-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--color-border-light);
+
+    h2 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .dialog-actions {
+      margin-top: 0;
+    }
+  }
+
+  .markdown-editor-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 1.25rem 1.25rem;
+  }
+
+  .EasyMDEContainer {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .CodeMirror {
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* 
+    The toolbar mixes text letters/numbers (B, I, H, 1.) with inline Feather
+    SVGs; give the text buttons weight/italics and size the SVG icons. 
+  */
+  .editor-toolbar {
+    border: none;
+
+    button {
+      min-width: 30px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #161616;
+
+      &.italic {
+        font-style: italic;
+      }
+    }
+
+    svg {
+      width: 14px;
+      height: 14px;
+      vertical-align: middle;
+      color: inherit;
+    }
+  }
 }
 
-.markdown-editor-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--color-border-light);
-}
 
-.markdown-editor-head h2 {
-  margin: 0;
-  font-size: 1.1rem;
-}
 
-.markdown-editor-head .dialog-actions {
-  margin-top: 0;
-}
 
-.markdown-editor-body {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  padding: 1rem 1.25rem 1.25rem;
-}
 
-.markdown-editor-dialog .EasyMDEContainer {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
 
-.markdown-editor-dialog .CodeMirror {
-  flex: 1;
-  min-height: 0;
-}
 
-/* The toolbar mixes text letters/numbers (B, I, H, 1.) with inline Feather
-   SVGs; give the text buttons weight/italics and size the SVG icons. */
-.markdown-editor-dialog .editor-toolbar button {
-  min-width: 30px;
-  font-weight: 600;
-  /* EasyMDE sets no color, so the buttons inherit a muted gray. The editor
-     surface is always light (even in dark mode), so use a fixed dark value
-     rather than --color-text, which flips to white and would disappear. */
-  color: #161616;
-}
 
-.markdown-editor-dialog .editor-toolbar button[title='Italic'] {
-  font-style: italic;
-}
-
-.markdown-editor-dialog .editor-toolbar button svg {
-  width: 16px;
-  height: 16px;
-  vertical-align: middle;
-  /* A global svg rule paints icons the primary red; inherit the dark button
-     color instead so the icons match the B/I/H/1. letters. */
-  color: inherit;
-}

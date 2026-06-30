@@ -6,21 +6,22 @@
  *
  * The values object already mirrors the frontmatter (it was materialized
  * from the same field tree), so serialization is a structural walk that
- * fills any missing leaf from its `default`, rewrites uploaded image
- * filenames into their published path, and adds the section wrapper fields
- * the template needs but the author never edits (`containerTag`, `id`,
- * `classes`).
+ * fills any missing leaf from its `default` and rewrites uploaded image
+ * filenames into their published path. The section wrapper fields
+ * (`containerTag`, `id`, `classes`) are now part of the schema (commons), so
+ * they serialize like any other leaf; WRAPPER only seeds their per-type
+ * defaults when a section is first created.
  */
 
 import { isLeaf, isArrayField, isGroup } from './field-utils.js';
 
 /**
- * Per-type wrapper overrides. The template reads `containerTag`/`classes`
- * off the section root; these are presentation defaults the schema's
- * author-facing `fields` deliberately omit. Anything not listed uses a
- * plain `<section>` with no extra classes.
+ * Per-type wrapper defaults, applied when a section is created (see
+ * section-builder's newSection). The template reads `containerTag`/`classes`
+ * off the section root; most sections default to a plain `<section>` with no
+ * extra classes, so only the exceptions are listed here.
  */
-const WRAPPER = {
+export const WRAPPER = {
   banner: { containerTag: 'aside', classes: 'cta-banner' }
 };
 
@@ -103,12 +104,8 @@ function walk(fields, values, imageBase) {
  * @return {Object} The library-schema section object.
  */
 export function serializeSection(type, values, fields, imageBase) {
-  const wrap = WRAPPER[type] || {};
   return {
     sectionType: type,
-    containerTag: wrap.containerTag || 'section',
-    id: '',
-    classes: wrap.classes || '',
     ...walk(fields, values, imageBase)
   };
 }

@@ -127,9 +127,10 @@ Add a section from the **Add a section** menu below the stack; reorder with
 
 Each section's form is collapsible. A page opens with every section
 collapsed, so the stack reads as a short list of section types and you can
-see the page's makeup at a glance and jump to the one you want. Click a
-section's header to open or close its form; a section you just added opens
-automatically so you can fill it in.
+see the page's makeup at a glance and jump to the one you want. Click
+anywhere on a section's header to open or close its form (the ↑/↓/✕
+controls in the header act on the section without toggling it); a section
+you just added opens automatically so you can fill it in.
 
 The drafts panel on the left and the live preview on the right each collapse
 from the toolbar toggles (**Drafts** and **Preview**) above the form.
@@ -140,9 +141,29 @@ Every section generates its form from the component library's schema rather
 than from hand-written editor code, which is why each exposes the full set of
 fields its library section supports and is named after that section. The menu
 is built from the schema the build emits, so the editor offers whatever
-components a site defines with no per-type editor code. Within a section,
-repeatable fields like call-to-action buttons add, remove, and reorder the
-same way the section stack does.
+components a site defines with no per-type editor code.
+
+Within a section, the form collapses the same way the section stack does, at
+every level. Repeatable entries (a hero slider's slides, for instance) are
+collapsible cards that add, remove, and reorder like the section stack; an
+existing entry loads collapsed and a newly added one opens. Field groups
+(Text, Image, Background, and so on) are collapsible disclosures too: a group
+at the top of a section opens by default, while a group nested inside an entry
+or another group starts collapsed, so a long form like a hero slide reads as a
+short list of parts you open as needed. Call-to-action buttons are the one
+variant: a section starts with none, **Add CTA** appends one as its own
+collapsible card, and each CTA carries only a remove control, since their
+order does not matter.
+
+Every section also carries the same wrapper settings, regardless of type,
+grouped together at the top of the form before any content. **Disable
+section** comes first, then **Container tag** (the HTML element the section
+renders as: `section`, `article`, `aside`, or `div`; `section` by default,
+though a few types seed their own, e.g. a banner starts as `aside`), then
+**Section ID** and **CSS classes**, which set an `id` and extra classes on
+that element for linking and styling. **Container settings** (the collapsed
+group at the bottom) holds the layout options: containment, animation,
+margins, padding, and background.
 
 Above the sections sit the post's metadata: title, description, date,
 authors, and tags. The title doubles as the post's URL slug

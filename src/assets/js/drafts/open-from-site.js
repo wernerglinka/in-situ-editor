@@ -10,9 +10,23 @@ import { customAlert } from '../utils/dialog-utils.js';
 import { loadSchema } from '../editor/schema/schema-loader.js';
 
 /**
+ * Maps a page's source path to its published URL the way metalsmith-permalinks
+ * does: drop the `.md`, collapse `index` to its folder, and wrap in slashes.
+ * Used as the anchors' href so a modified click can open the live page.
+ * @param {string} path - The source path, e.g. `blog/hello.md`.
+ * @return {string} The published URL, e.g. `/blog/hello/`.
+ */
+function pageUrl(path) {
+  const slug = path.replace(/\.md$/, '').replace(/\/?index$/, '');
+  return slug ? `/${slug}/` : '/';
+}
+
+/**
  * Renders the page list into the picker dialog and resolves with the chosen
  * source path, or null if the dialog is dismissed. Posts and pages are shown
- * in two labelled groups, matching how the editor treats them on open.
+ * in two labelled groups, matching how the editor treats them on open. Each
+ * row is a link to the published page; a plain click opens it in the editor,
+ * while a modified click (new tab/window) follows the href to the live page.
  * @param {Object} ui - The UI elements.
  * @param {Array} items - The list from listPages().
  * @return {Promise<string|null>} The chosen page path, or null.
@@ -37,29 +51,31 @@ function pickPage(ui, items) {
 
     for (const item of groupItems) {
       const li = document.createElement('li');
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'open-site-item';
-      btn.dataset.path = item.path;
+      const link = document.createElement('a');
+      link.className = 'open-site-item';
+      link.dataset.path = item.path;
+      link.href = pageUrl(item.path);
       const title = document.createElement('span');
       title.className = 'open-site-item-title';
       title.textContent = item.title;
-      const meta = document.createElement('span');
-      meta.className = 'open-site-item-path';
-      meta.textContent = item.date ? `${item.path} · ${item.date}` : item.path;
-      btn.append(title, meta);
-      li.appendChild(btn);
+      link.append(title);
+      li.appendChild(link);
       list.appendChild(li);
     }
   }
 
   return new Promise((resolve) => {
     const onClick = (e) => {
-      const btn = e.target.closest('.open-site-item');
-      if (!btn) {
+      const link = e.target.closest('.open-site-item');
+      if (!link) {
         return;
       }
-      ui.openSiteDialog.close(btn.dataset.path);
+      // Let modified clicks (new tab/window) follow the href to the live page.
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
+        return;
+      }
+      e.preventDefault();
+      ui.openSiteDialog.close(link.dataset.path);
     };
     list.addEventListener('click', onClick);
     ui.openSiteDialog.addEventListener(

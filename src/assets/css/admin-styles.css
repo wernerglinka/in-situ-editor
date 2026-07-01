@@ -30,12 +30,18 @@ body.admin {
   display: grid;
   grid-template-columns: 250px minmax(0, 1fr) minmax(0, 1fr);
   gap: 2rem;
-  /* 
+  /*
     Width constraint moved here from body so the footer can span the viewport;
-     centered, with generous space above the footer. 
+     centered, with generous space above the footer.
   */
   max-width: 90em;
   margin: 2rem auto 5rem;
+  /*
+    Center the track group so that when a pane is collapsed the remaining
+     content stays centered rather than pinned to the left. No effect on the
+     default 3-pane layout, whose 1fr tracks leave no free space to distribute.
+  */
+  justify-content: center;
 }
 
 .editor-main,
@@ -55,14 +61,19 @@ body.admin {
 }
 
 @media (min-width: 1001px) {
+  /*
+    In a collapsed state, size the flexible tracks to their content max
+     (50rem, matching .editor-main/.editor-preview) instead of 1fr, so the
+     container's justify-content: center can center the visible group.
+  */
   .editor-container.no-sidebar:not(.no-preview) {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 50rem) minmax(0, 50rem);
   }
   .editor-container.no-preview:not(.no-sidebar) {
-    grid-template-columns: 250px minmax(0, 1fr);
+    grid-template-columns: 250px minmax(0, 50rem);
   }
   .editor-container.no-sidebar.no-preview {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 50rem);
   }
 }
 
@@ -464,7 +475,13 @@ body.admin {
 }
 
 .form-group label,
+.settings-details h4 {
+  margin: 0 0 1rem;
+}
+
 .ai-toggle-label {
+  display: flex;
+  align-items: center;
   margin-bottom: 0.5rem;
   font-weight: bold;
   font-size: 0.85rem;
@@ -792,6 +809,11 @@ dialog {
 dialog::backdrop {
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(2px);
+}
+
+/* Freeze the page behind an open modal so the background can't scroll. */
+html:has(dialog[open]) {
+  overflow: hidden;
 }
 
 @media (prefers-color-scheme: dark) {

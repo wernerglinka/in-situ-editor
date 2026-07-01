@@ -187,9 +187,20 @@ It has two views, switched by the **Rendered** / **YAML** buttons at its top:
   commit, handy for checking exactly what a section emits. Long lines are
   clipped at the pane's edge.
 
-The rendered view needs the local preview server running. Start the site with
-`netlify dev` (not the plain dev server) so the render endpoint is available; if
-it is not reachable the pane says so and the YAML view still works.
+On the deployed site the rendered view just works: the render runs as a Netlify
+Function that Netlify serves alongside the site, so an editor signed in through
+Netlify only needs the browser. If it is ever unreachable (a transient hiccup or
+a broken deploy) the pane says so in plain language and the YAML view still
+shows your content; reload in a moment, and tell your site administrator if it
+persists.
+
+The one place this differs is local development. The render endpoint is not
+served by the plain `npm start` dev server, so run the site with `netlify dev`
+instead. When running on `localhost` without it, the editor greys out the
+**Rendered** button and falls back to YAML; hover the greyed button for a
+one-line reminder of what to run. Restart under `netlify dev`, reload the admin,
+and the Rendered view returns to whichever mode you last used. This greying-out
+is localhost-only — it never happens on the deployed site.
 
 ## Editing in the preview
 

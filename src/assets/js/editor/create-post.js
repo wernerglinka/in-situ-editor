@@ -5,7 +5,7 @@
 
 import { ui } from './ui-elements.js';
 import { drafts, createNewDraft } from '../drafts/draft-manager.js';
-import { updatePreview } from './editor-logic.js';
+import { updatePreview, probeRenderBackend, RENDER_BACKEND_HINT, IS_LOCAL_DEV } from './editor-logic.js';
 import { handleFiles } from './image-handler.js';
 import { initPasteHandler } from './paste-handler.js';
 import { initTagEditor } from './tag-editor.js';
@@ -141,7 +141,7 @@ function initPreviewModeToggle() {
   if (!previewFrame || !previewContent || !previewModeRenderedBtn || !previewModeYamlBtn) {
     return;
   }
-  const apply = (mode) => {
+  const apply = (mode, persist = true) => {
     const rendered = mode !== 'yaml';
     previewFrame.hidden = !rendered;
     previewContent.hidden = rendered;
@@ -149,11 +149,41 @@ function initPreviewModeToggle() {
     previewModeYamlBtn.classList.toggle('is-active', !rendered);
     previewModeRenderedBtn.setAttribute('aria-pressed', String(rendered));
     previewModeYamlBtn.setAttribute('aria-pressed', String(!rendered));
-    localStorage.setItem('editor-preview-mode', mode);
+    if (persist) {
+      localStorage.setItem('editor-preview-mode', mode);
+    }
   };
-  previewModeRenderedBtn.onclick = () => apply('rendered');
+  // Guard the click with aria-disabled rather than the disabled attribute:
+  // Chrome suppresses hover (and the title tooltip) on truly disabled buttons,
+  // and this editor is Chrome-only, so the hint would never show.
+  previewModeRenderedBtn.onclick = () => {
+    if (previewModeRenderedBtn.getAttribute('aria-disabled') !== 'true') {
+      apply('rendered');
+    }
+  };
   previewModeYamlBtn.onclick = () => apply('yaml');
   apply(localStorage.getItem('editor-preview-mode') === 'yaml' ? 'yaml' : 'rendered');
+
+  // The rendered view needs the render backend, which only `netlify dev` serves
+  // locally. Disabling the toggle with a "run netlify dev" hint only makes sense
+  // for a developer, so gate it to localhost: on the deployed site the backend
+  // is served by Netlify, an absent probe is more likely a transient blip than a
+  // real outage, and a content editor cannot act on the hint anyway. In
+  // production we leave Rendered enabled and let the plain-language in-frame
+  // notice handle a genuine failure. Probe keeps the toggle hoverable (no
+  // disabled attribute) so the hint shows in Chrome, and falls back to YAML
+  // without overwriting the saved preference.
+  if (IS_LOCAL_DEV) {
+    probeRenderBackend().then((available) => {
+      if (available) {
+        return;
+      }
+      previewModeRenderedBtn.classList.add('is-disabled');
+      previewModeRenderedBtn.setAttribute('aria-disabled', 'true');
+      previewModeRenderedBtn.title = RENDER_BACKEND_HINT;
+      apply('yaml', false);
+    });
+  }
 }
 initPreviewModeToggle();
 

@@ -759,6 +759,13 @@ body.admin {
   font-weight: 600;
 }
 
+/* Disabled via aria-disabled, not the disabled attribute, so it stays
+   hoverable and the render-backend hint (title) shows in Chrome. */
+.preview-mode-btn.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .preview-frame {
   width: 100%;
   height: calc(100vh - 150px);

@@ -9,6 +9,74 @@ import { buildFrontmatter, generateMarkdown } from '../utils/markdown-utils.js';
 const PREVIEW_ENDPOINT = '/.netlify/functions/preview';
 
 /**
+ * Whether the admin is running against a local dev server rather than the
+ * deployed site. This decides the audience for any "backend unavailable"
+ * messaging: on localhost the reader is a developer who likely forgot
+ * `netlify dev` (actionable); on the deployed site the reader is a content
+ * editor with only a browser and a Netlify login, for whom the backend is
+ * deployed by Netlify and any outage is transient and not theirs to fix.
+ */
+export const IS_LOCAL_DEV =
+  /^(localhost|127\.0\.0\.1|::1)$/.test(window.location.hostname) || window.location.hostname.endsWith('.local');
+
+/**
+ * Editor-facing message for an unreachable render backend. No dev jargon: a
+ * content editor cannot act on `netlify dev`, so point at the YAML fallback and
+ * a reload, and defer anything real to the site administrator.
+ */
+const RENDER_UNAVAILABLE_EDITOR =
+  'The live preview is temporarily unavailable. Your content is safe and the YAML view still ' +
+  'shows it. Try again in a moment or reload the page; if it keeps happening, let your site ' +
+  'administrator know.';
+
+/**
+ * Picks the audience-appropriate detail for an unreachable-backend notice.
+ * @param {string} devDetail - The developer-facing detail (localhost only).
+ * @return {string} The detail to show given the current environment.
+ */
+function unavailableDetail(devDetail) {
+  return IS_LOCAL_DEV ? devDetail : RENDER_UNAVAILABLE_EDITOR;
+}
+
+/**
+ * Short hint for the disabled Rendered toggle's hover tooltip. The plain
+ * `npm start` dev server serves the site but not the Functions runtime the
+ * render backend lives in.
+ */
+const RENDER_BACKEND_HINT =
+  'Rendered preview needs the render backend, which only `netlify dev` serves. ' +
+  'Stop `npm start`, run `netlify dev`, and reopen the admin on the port it prints ' +
+  '(default http://localhost:8888/admin/?admin=true).';
+
+/**
+ * Longer guidance for the in-frame fallback notice, used if the backend drops
+ * out after the initial probe (rare).
+ */
+const NETLIFY_DEV_HINT =
+  'The preview render runs as a Netlify Function, which the plain `npm start` dev server ' +
+  'does not serve. Stop it and run `netlify dev` instead, then open the admin on the port ' +
+  'it prints (default http://localhost:8888/admin/?admin=true). The YAML view stays available ' +
+  'in the meantime.';
+
+/**
+ * Cheap availability probe for the render backend. A HEAD to the endpoint is
+ * routed to the Function under `netlify dev` (which answers 405 for non-POST,
+ * so the route exists); the plain dev server has no such route and 404s;
+ * nothing listening throws. Only a reachable route counts as available.
+ * @return {Promise<boolean>} Whether the render backend is serving.
+ */
+export async function probeRenderBackend() {
+  try {
+    const res = await fetch(PREVIEW_ENDPOINT, { method: 'HEAD' });
+    return res.status !== 404;
+  } catch {
+    return false;
+  }
+}
+
+export { RENDER_BACKEND_HINT };
+
+/**
  * Updates the preview pane. The rendered view POSTs the draft's frontmatter to
  * the render endpoint, which returns the page rendered through the site's own
  * Nunjucks templates and filters, and injects it into an iframe so it carries
@@ -70,14 +138,20 @@ async function renderPreviewFrame(ui, ...args) {
       body: JSON.stringify({ frontmatter })
     });
     html = await res.text();
-    if (!res.ok) {
-      html = renderNotice('Preview render failed', html);
+    if (res.status === 404) {
+      // Server is up (e.g. plain `npm start`) but the Functions runtime isn't,
+      // so the request 404s with the dev server's own error page rather than a
+      // rendered document. The function itself never returns 404, so in
+      // production this branch effectively doesn't happen.
+      html = renderNotice('Live preview unavailable', unavailableDetail(NETLIFY_DEV_HINT));
+    } else if (!res.ok) {
+      // A real backend error (e.g. 500). Show the raw body to a developer; keep
+      // it plain for a content editor.
+      html = renderNotice('Live preview unavailable', unavailableDetail(html));
     }
   } catch {
-    html = renderNotice(
-      'Rendered preview unavailable',
-      'The preview server is not running. Start it with `netlify dev`, or use the YAML view.'
-    );
+    // Nothing is listening at the endpoint at all.
+    html = renderNotice('Live preview unavailable', unavailableDetail(NETLIFY_DEV_HINT));
   }
 
   const prevScroll = frame.contentWindow ? frame.contentWindow.scrollY : 0;

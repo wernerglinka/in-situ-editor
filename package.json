@@ -37,6 +37,8 @@
     "src/assets/js/browser-fs-access",
     "src/assets/css/admin-styles.css",
     "netlify/functions/publish.js",
+    "netlify/functions/preview.js",
+    "netlify/functions/lib/render-page.js",
     "netlify.toml",
     "scripts/install-editor.mjs",
     "scripts/editor-manifest.mjs",

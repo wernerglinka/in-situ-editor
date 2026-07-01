@@ -34,6 +34,10 @@ export const MANIFEST = [
   'src/assets/css/admin-styles.css',
   // The publish backend
   'netlify/functions/publish.js',
+  // The preview render backend (renders a draft through the site's own Nunjucks
+  // templates/filters for the live rendered preview and inline editing)
+  'netlify/functions/preview.js',
+  'netlify/functions/lib/render-page.js',
   'netlify.toml'
 ];
 

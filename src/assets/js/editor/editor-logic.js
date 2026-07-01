@@ -3,12 +3,18 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { generateMarkdown } from '../utils/markdown-utils.js';
+import { buildFrontmatter, generateMarkdown } from '../utils/markdown-utils.js';
+
+/** The render endpoint (a Netlify Function; available locally under `netlify dev`). */
+const PREVIEW_ENDPOINT = '/.netlify/functions/preview';
 
 /**
- * Updates the preview pane. Until an in-browser Nunjucks renderer lands,
- * this shows the emitted structured-frontmatter document so the author
- * sees exactly what publishing will commit.
+ * Updates the preview pane. The rendered view POSTs the draft's frontmatter to
+ * the render endpoint, which returns the page rendered through the site's own
+ * Nunjucks templates and filters, and injects it into an iframe so it carries
+ * the real site CSS and JS. The YAML view (the emitted structured frontmatter)
+ * stays available behind the toggle, and is the fallback when the endpoint is
+ * unreachable (e.g. the plain dev server without `netlify dev`).
  * @param {string} currentId - The ID of the current draft.
  * @param {Object[]} drafts - The list of all drafts.
  * @param {Object} ui - The UI elements.
@@ -20,7 +26,7 @@ export async function updatePreview(currentId, drafts, ui) {
     return;
   }
   const classifierResults = window.getSelectedClassifierResults ? window.getSelectedClassifierResults() : [];
-  const md = generateMarkdown(
+  const args = [
     draft,
     ui.titleInput.value,
     ui.descInput.value,
@@ -28,12 +34,305 @@ export async function updatePreview(currentId, drafts, ui) {
     ui.tagsInput.value,
     ui.contentInput ? ui.contentInput.value : '',
     classifierResults
-  );
+  ];
 
+  // Keep the YAML view current regardless of which pane is showing.
   const pre = document.createElement('pre');
   pre.className = 'frontmatter-preview';
-  pre.textContent = md;
+  pre.textContent = generateMarkdown(...args);
   ui.previewContent.replaceChildren(pre);
+
+  await renderPreviewFrame(ui, ...args);
+}
+
+/**
+ * Fetches the rendered HTML for the draft and swaps it into the preview iframe,
+ * preserving scroll position across the reload. On failure, writes a short
+ * notice into the frame and leaves the YAML view as the usable fallback.
+ * @param {Object} ui - The UI elements.
+ * @param {...any} args - The buildFrontmatter arguments.
+ * @return {Promise<void>}
+ */
+async function renderPreviewFrame(ui, ...args) {
+  const frame = ui.previewFrame;
+  if (!frame) {
+    return;
+  }
+  const draft = args[0];
+  const { doc, body, isContent } = buildFrontmatter(...args);
+  const frontmatter = { ...doc, bodyMode: isContent ? 'content' : 'sections', contents: body };
+
+  let html;
+  try {
+    const res = await fetch(PREVIEW_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ frontmatter })
+    });
+    html = await res.text();
+    if (!res.ok) {
+      html = renderNotice('Preview render failed', html);
+    }
+  } catch {
+    html = renderNotice(
+      'Rendered preview unavailable',
+      'The preview server is not running. Start it with `netlify dev`, or use the YAML view.'
+    );
+  }
+
+  const prevScroll = frame.contentWindow ? frame.contentWindow.scrollY : 0;
+  frame.addEventListener(
+    'load',
+    () => {
+      if (frame.contentWindow) {
+        frame.contentWindow.scrollTo(0, prevScroll);
+      }
+      annotateInlineFields(frame, draft);
+      wireInlineEditing(frame);
+    },
+    { once: true }
+  );
+  frame.srcdoc = html;
+}
+
+/**
+ * The style injected into the preview frame to signal which text is editable
+ * in place and to give focus a clear affordance.
+ */
+const INLINE_EDIT_STYLE = `
+  [data-field][contenteditable]:hover { outline: 1px dashed rgba(80,120,255,.55); outline-offset: 3px; }
+  [data-field][contenteditable]:focus { outline: 2px solid rgba(80,120,255,.9); outline-offset: 3px; cursor: text; }
+  [data-field-markdown] { cursor: pointer; }
+  [data-field-markdown]:hover { outline: 1px dashed rgba(80,120,255,.55); outline-offset: 3px; }
+`;
+
+/**
+ * Injects the source-mapping attributes (data-section-index, data-field) into
+ * the rendered preview. The library components are generic and emit none of
+ * this — all editor knowledge lives here. It walks the draft's sections against
+ * the rendered section wrappers (in order, skipping disabled ones), then tags
+ * the editable fields inside each using the generic partials' stable class
+ * names (`.title`, `.lead-in`, `.sub-title`, `.prose`, `.caption`, `.ctas a`),
+ * guarded by the section's own values so a section that doesn't own a field at
+ * top level (a slider, whose text lives per-slide) is never mis-tagged.
+ * @param {HTMLIFrameElement} frame - The preview iframe.
+ * @param {Object} draft - The current draft (its `sections` array).
+ */
+function annotateInlineFields(frame, draft) {
+  const doc = frame.contentDocument;
+  const main = doc && doc.querySelector('main');
+  if (!main) {
+    return;
+  }
+  const sections = Array.isArray(draft.sections) ? draft.sections : [];
+  const rendered = sections.filter((s) => !s.isDisabled);
+  const wrappers = Array.from(main.children).filter((el) => /^(SECTION|ARTICLE|ASIDE|DIV)$/.test(el.tagName));
+
+  wrappers.forEach((wrap, i) => {
+    const section = rendered[i];
+    if (!section) {
+      return;
+    }
+    wrap.dataset.sectionIndex = String(sections.indexOf(section));
+    annotateSectionFields(wrap, section);
+  });
+}
+
+/** Tags the first matching element under `wrap` with a field path, once. */
+function tagField(wrap, selector, path, isMarkdown) {
+  const el = wrap.querySelector(selector);
+  if (el && !el.dataset.field) {
+    el.dataset.field = path;
+    if (isMarkdown) {
+      el.dataset.fieldMarkdown = 'true';
+    }
+  }
+}
+
+/**
+ * Tags a section's own top-level editable fields, guarded by the section values
+ * so nested content (a slide's text) isn't picked up as the section's.
+ * @param {Element} wrap - The rendered section wrapper.
+ * @param {Object} section - The draft section values.
+ */
+function annotateSectionFields(wrap, section) {
+  const text = section.text;
+  if (text && typeof text === 'object') {
+    if (text.leadIn) {
+      tagField(wrap, '.lead-in', 'text.leadIn');
+    }
+    if (text.title) {
+      tagField(wrap, '.title', 'text.title');
+    }
+    if (text.subTitle) {
+      tagField(wrap, '.sub-title', 'text.subTitle');
+    }
+    if (text.prose) {
+      tagField(wrap, '.prose', 'text.prose', true);
+    }
+  }
+  if (section.image && section.image.caption) {
+    tagField(wrap, '.caption', 'image.caption');
+  }
+  if (Array.isArray(section.ctas)) {
+    // Only ctas with a url render, in order; map each rendered anchor back to
+    // its true index in the section's ctas array (the form's index).
+    const validIndexes = section.ctas.map((c, idx) => (c && c.url ? idx : -1)).filter((idx) => idx >= 0);
+    const anchors = wrap.querySelectorAll('.ctas a');
+    anchors.forEach((a, n) => {
+      if (n < validIndexes.length) {
+        wrapCtaLabel(a, `ctas.${validIndexes[n]}.label`);
+      }
+    });
+  }
+}
+
+/**
+ * Wraps a cta anchor's label text in a data-field span (leaving any icon
+ * element in place) so the label alone is editable.
+ * @param {HTMLAnchorElement} a - The rendered cta anchor.
+ * @param {string} path - The label's field path (e.g. "ctas.0.label").
+ */
+function wrapCtaLabel(a, path) {
+  if (a.querySelector('span[data-field]')) {
+    return;
+  }
+  let label = '';
+  for (const node of Array.from(a.childNodes)) {
+    if (node.nodeType === 3) {
+      label += node.textContent;
+      a.removeChild(node);
+    }
+  }
+  label = label.trim();
+  if (!label) {
+    return;
+  }
+  const span = a.ownerDocument.createElement('span');
+  span.dataset.field = path;
+  span.textContent = label;
+  a.appendChild(span);
+}
+
+/**
+ * Makes the rendered preview editable in place. Plain-string fields (marked
+ * data-field) become contenteditable and commit on blur; Markdown prose
+ * (data-field-markdown) opens the field's Markdown overlay on click. Both route
+ * the edit through the matching form control, so the existing bind →
+ * persist → re-render pipeline does the actual work. Re-run on every frame load
+ * since each render replaces the document.
+ * @param {HTMLIFrameElement} frame - The preview iframe.
+ */
+function wireInlineEditing(frame) {
+  const doc = frame.contentDocument;
+  if (!doc || !doc.body) {
+    return;
+  }
+  if (doc.head) {
+    const style = doc.createElement('style');
+    style.textContent = INLINE_EDIT_STYLE;
+    doc.head.append(style);
+  }
+
+  // The preview is for editing, not navigating: swallow link clicks so editing a
+  // CTA label or a linked image caption (both live inside an <a>) never loads
+  // another page into the frame. Capture phase, so it wins over the default.
+  doc.addEventListener(
+    'click',
+    (e) => {
+      const link = e.target.closest && e.target.closest('a[href]');
+      if (link) {
+        e.preventDefault();
+      }
+    },
+    true
+  );
+
+  for (const el of doc.querySelectorAll('[data-field]:not([data-field-markdown])')) {
+    el.contentEditable = 'plaintext-only';
+    el.spellcheck = false;
+    let original = '';
+    el.addEventListener('focus', () => {
+      original = el.textContent.trim();
+    });
+    // These fields are single-line; Enter commits rather than inserting a break.
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        el.blur();
+      }
+    });
+    el.addEventListener('blur', () => {
+      const value = el.textContent.trim();
+      if (value !== original) {
+        commitInlineEdit(el, value);
+      }
+    });
+  }
+
+  for (const el of doc.querySelectorAll('[data-field-markdown]')) {
+    el.title = 'Click to edit in the Markdown editor';
+    el.addEventListener('click', () => openProseEditor(el));
+  }
+}
+
+/**
+ * Finds the form control that backs a preview element, matching on the
+ * section index (nearest data-section-index ancestor) and the field path.
+ * @param {Element} el - The edited element in the preview frame.
+ * @return {HTMLElement|null} The form input/textarea, or null if not found.
+ */
+function formControlFor(el) {
+  const wrap = el.closest('[data-section-index]');
+  if (!wrap) {
+    return null;
+  }
+  const index = wrap.getAttribute('data-section-index');
+  const path = el.getAttribute('data-field');
+  return document.querySelector(`#sections-list [data-section-index="${index}"] [data-field-path="${path}"]`);
+}
+
+/**
+ * Writes an inline text edit back through its form control: set the value and
+ * dispatch `input`, which fires the control's existing handler (mutate model,
+ * sync, re-render preview). No-op if the control can't be found.
+ * @param {Element} el - The edited preview element.
+ * @param {string} value - The new text.
+ */
+function commitInlineEdit(el, value) {
+  const input = formControlFor(el);
+  if (!input) {
+    return;
+  }
+  input.value = value;
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+/**
+ * Opens the Markdown overlay for a prose field by triggering its form field's
+ * Expand button. The overlay writes back by dispatching `input` on the
+ * textarea, so saving flows through the same pipeline as a form edit.
+ * @param {Element} el - The clicked prose element in the preview frame.
+ */
+function openProseEditor(el) {
+  const textarea = formControlFor(el);
+  const expandBtn = textarea && textarea.parentElement && textarea.parentElement.querySelector('button');
+  if (expandBtn) {
+    expandBtn.click();
+  }
+}
+
+/**
+ * A minimal standalone HTML document showing a notice in the preview frame.
+ * @param {string} heading - The notice heading.
+ * @param {string} detail - The notice detail (plain text).
+ * @return {string} An HTML document string.
+ */
+function renderNotice(heading, detail) {
+  const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+  return `<!doctype html><meta charset="utf-8"><body style="font:14px/1.5 system-ui,sans-serif;color:#444;padding:2rem">
+    <h2 style="margin:0 0 .5rem;font-size:1rem">${esc(heading)}</h2>
+    <p style="margin:0;white-space:pre-wrap">${esc(detail)}</p></body>`;
 }
 
 export { wrapText } from '../utils/text-utils.js';

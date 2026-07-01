@@ -60,7 +60,7 @@ export function toYaml(value, indent = 0) {
 
   if (value !== null && typeof value === 'object') {
     return Object.entries(value)
-      .map(([ key, val ]) => {
+      .map(([key, val]) => {
         if (Array.isArray(val)) {
           if (val.length === 0) {
             return `${pad}${key}: []`;
@@ -123,7 +123,7 @@ const DEFAULT_BODY_CLASS = { content: 'content-page', sections: 'sections-page' 
 
 /** The page's body class: the author's value, else the body-mode default. */
 const bodyClassesOf = (draft, isContent) =>
-  (draft.bodyClasses || '').trim() || DEFAULT_BODY_CLASS[ isContent ? 'content' : 'sections' ];
+  (draft.bodyClasses || '').trim() || DEFAULT_BODY_CLASS[isContent ? 'content' : 'sections'];
 
 /**
  * The top-message banner block, or null when there is no message. The message
@@ -191,13 +191,17 @@ function pageBlocks(draft, title) {
 }
 
 /**
- * Generates a structured-content markdown document (frontmatter only,
- * empty body) from draft data. The shape depends on the draft's page type:
- * a post carries seo + card + tags, a page carries seo and (optionally) a
- * navigation block. The page-level metadata (social image, canonical URL,
- * body classes, hasHero, top message, menu) is edited in dedicated form
- * sections. Any genuinely unknown top-level key is carried through
- * `draft.extra` so an edited page never silently loses it.
+ * Builds the structured frontmatter object (and body) from draft data — the
+ * single source of truth for the emitted page shape. The shape depends on the
+ * draft's page type: a post carries seo + card + tags, a page carries seo and
+ * (optionally) a navigation block. The page-level metadata (social image,
+ * canonical URL, body classes, hasHero, top message, menu) is edited in
+ * dedicated form sections. Any genuinely unknown top-level key is carried
+ * through `draft.extra` so an edited page never silently loses it.
+ *
+ * `generateMarkdown` stringifies this to YAML for publishing; the preview
+ * render posts the object straight to the render endpoint, so both go through
+ * exactly the same shape.
  *
  * @param {Object} draft - The draft object.
  * @param {string} title - The title.
@@ -206,9 +210,10 @@ function pageBlocks(draft, title) {
  * @param {string} tagsValue - Comma-separated tags string (posts only).
  * @param {string} content - The markdown body (content mode only; empty in sections mode).
  * @param {Array<Object>} [classifierResults=[]] - AI classifier results (posts only).
- * @return {string} The formatted Markdown string.
+ * @return {{ doc: Object, body: string, isContent: boolean }} The frontmatter
+ *   object, the markdown body (content mode only, else ''), and the mode flag.
  */
-export function generateMarkdown(draft, title, description, date, tagsValue, content, classifierResults = []) {
+export function buildFrontmatter(draft, title, description, date, tagsValue, content, classifierResults = []) {
   const slug = slugify(title);
   const type = pageTypeOf(draft);
   const cfg = PAGE_TYPES[type];
@@ -256,6 +261,25 @@ export function generateMarkdown(draft, title, description, date, tagsValue, con
   };
 
   const body = isContent ? `${(content || '').trimEnd()}\n` : '';
+  return { doc, body, isContent };
+}
+
+/**
+ * Generates a structured-content markdown document (frontmatter plus body)
+ * from draft data, ready to publish. Thin wrapper over buildFrontmatter that
+ * serializes the object to YAML.
+ *
+ * @param {Object} draft - The draft object.
+ * @param {string} title - The title.
+ * @param {string} description - The description.
+ * @param {string} date - The date (posts only).
+ * @param {string} tagsValue - Comma-separated tags string (posts only).
+ * @param {string} content - The markdown body (content mode only; empty in sections mode).
+ * @param {Array<Object>} [classifierResults=[]] - AI classifier results (posts only).
+ * @return {string} The formatted Markdown string.
+ */
+export function generateMarkdown(draft, title, description, date, tagsValue, content, classifierResults = []) {
+  const { doc, body } = buildFrontmatter(draft, title, description, date, tagsValue, content, classifierResults);
   return `---\n${toYaml(doc)}\n---\n${body}`;
 }
 

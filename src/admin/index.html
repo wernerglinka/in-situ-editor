@@ -150,12 +150,8 @@ seo:
         <div class="form-group">
           <span class="field-label">Page type</span>
           <div class="radio-group" role="radiogroup" aria-label="Page type">
-            <label class="radio-option">
-              <input type="radio" name="page-type" value="post" checked /> Blog post
-            </label>
-            <label class="radio-option">
-              <input type="radio" name="page-type" value="page" /> Page
-            </label>
+            <label class="radio-option"> <input type="radio" name="page-type" value="post" checked /> Blog post </label>
+            <label class="radio-option"> <input type="radio" name="page-type" value="page" /> Page </label>
           </div>
           <p class="field-hint" id="page-type-hint"></p>
         </div>
@@ -213,7 +209,11 @@ seo:
                 A dismissible banner above the header. The message supports Markdown, plus an optional link.
               </p>
               <label for="post-top-message-text">Message</label>
-              <textarea id="post-top-message-text" rows="2" placeholder="**New:** five components just landed."></textarea>
+              <textarea
+                id="post-top-message-text"
+                rows="2"
+                placeholder="**New:** five components just landed."
+              ></textarea>
               <label for="post-top-message-link-url">Link URL</label>
               <input type="text" id="post-top-message-link-url" placeholder="/references/" />
               <label for="post-top-message-link-label">Link label</label>
@@ -273,8 +273,8 @@ seo:
             <div class="form-group">
               <label for="post-social-image">Social image</label>
               <p class="field-hint">
-                The share/social image (Open Graph). For posts it also sets the card thumbnail.
-                Leave blank to use the first section image.
+                The share/social image (Open Graph). For posts it also sets the card thumbnail. Leave blank to use the
+                first section image.
               </p>
               <input type="text" id="post-social-image" placeholder="/assets/images/blog/my-post/cover.jpg" />
             </div>
@@ -429,7 +429,14 @@ seo:
     </div>
 
     <div class="editor-preview">
-      <div id="preview-content" class="markdown-body"></div>
+      <div class="preview-modes" role="group" aria-label="Preview mode">
+        <button type="button" id="preview-mode-rendered" class="preview-mode-btn is-active" aria-pressed="true">
+          Rendered
+        </button>
+        <button type="button" id="preview-mode-yaml" class="preview-mode-btn" aria-pressed="false">YAML</button>
+      </div>
+      <iframe id="preview-frame" class="preview-frame" title="Rendered page preview"></iframe>
+      <div id="preview-content" class="markdown-body" hidden></div>
     </div>
   </div>
 </div>

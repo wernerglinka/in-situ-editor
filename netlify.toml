@@ -6,6 +6,12 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
+# The preview function reads the site's Nunjucks templates and global data at
+# runtime (fs), so esbuild must ship them in the function bundle — they are not
+# reachable through the JS import graph it traces.
+[functions.preview]
+  included_files = ["lib/layouts/**", "lib/data/**", "build/assets/site-data.json", "build/assets/pages.json"]
+
 # `netlify dev` wraps the existing browser-sync dev server and adds
 # Function routing + Identity proxying on top, so the admin can call
 # /.netlify/functions/publish locally just like in production.

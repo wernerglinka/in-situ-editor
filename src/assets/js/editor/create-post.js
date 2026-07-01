@@ -131,6 +131,32 @@ function initPaneToggles() {
 }
 initPaneToggles();
 
+/**
+ * Switches the preview pane between the rendered iframe and the YAML view.
+ * The choice is remembered per browser. YAML stays useful as a debugging view
+ * and as the fallback when the render endpoint is unreachable.
+ */
+function initPreviewModeToggle() {
+  const { previewFrame, previewContent, previewModeRenderedBtn, previewModeYamlBtn } = ui;
+  if (!previewFrame || !previewContent || !previewModeRenderedBtn || !previewModeYamlBtn) {
+    return;
+  }
+  const apply = (mode) => {
+    const rendered = mode !== 'yaml';
+    previewFrame.hidden = !rendered;
+    previewContent.hidden = rendered;
+    previewModeRenderedBtn.classList.toggle('is-active', rendered);
+    previewModeYamlBtn.classList.toggle('is-active', !rendered);
+    previewModeRenderedBtn.setAttribute('aria-pressed', String(rendered));
+    previewModeYamlBtn.setAttribute('aria-pressed', String(!rendered));
+    localStorage.setItem('editor-preview-mode', mode);
+  };
+  previewModeRenderedBtn.onclick = () => apply('rendered');
+  previewModeYamlBtn.onclick = () => apply('yaml');
+  apply(localStorage.getItem('editor-preview-mode') === 'yaml' ? 'yaml' : 'rendered');
+}
+initPreviewModeToggle();
+
 initEditorActions(ui);
 // Legacy body-textarea paths: only wire them if the markup still has the
 // drop zone / upload button (removed when the section builder replaced

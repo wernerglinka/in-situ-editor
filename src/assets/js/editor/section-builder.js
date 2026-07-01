@@ -100,7 +100,7 @@ function formContext() {
       if (!data) {
         return null;
       }
-      const url = URL.createObjectURL(new Blob([ data ]));
+      const url = URL.createObjectURL(new Blob([data]));
       thumbCache.set(entry.id, url);
       return url;
     },
@@ -122,6 +122,9 @@ function renderCard(section, index) {
   const isOpen = expanded.has(section);
   const card = document.createElement('div');
   card.className = `section-card section-card-${kind}${isOpen ? '' : ' is-collapsed'}`;
+  // The section's array index, so an inline edit in the rendered preview (keyed
+  // by the same index) can find this card's controls by data-field-path.
+  card.dataset.sectionIndex = String(index);
 
   // The whole header is the collapse toggle (like a <summary>); the controls
   // sit inside it and stop propagation so moving/removing never also toggles.
@@ -160,10 +163,10 @@ function renderCard(section, index) {
   const controls = document.createElement('div');
   controls.className = 'section-card-controls';
   controls.onclick = (e) => e.stopPropagation();
-  for (const [ act, symbol, title ] of [
-    [ 'up', '↑', 'Move up' ],
-    [ 'down', '↓', 'Move down' ],
-    [ 'remove', '✕', 'Remove section' ]
+  for (const [act, symbol, title] of [
+    ['up', '↑', 'Move up'],
+    ['down', '↓', 'Move down'],
+    ['remove', '✕', 'Remove section']
   ]) {
     const b = document.createElement('button');
     b.type = 'button';
@@ -176,7 +179,7 @@ function renderCard(section, index) {
         sections.splice(index, 1);
       } else {
         const to = act === 'up' ? index - 1 : index + 1;
-        [ sections[index], sections[to] ] = [ sections[to], sections[index] ];
+        [sections[index], sections[to]] = [sections[to], sections[index]];
       }
       render();
       onChangeRef();
@@ -230,7 +233,7 @@ export function loadSections(draft) {
   }
   // Schema-driven types need the schema loaded before they can render, and
   // source-backed fields need the site data; warm both before rendering.
-  Promise.all([ loadSchema(), loadSiteData() ])
+  Promise.all([loadSchema(), loadSiteData()])
     .then(() => {
       sections = draft.sections;
       render();

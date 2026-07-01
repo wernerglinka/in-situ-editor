@@ -44,11 +44,39 @@ const GROUP_LABELS = {
 
 /** Section-level setting leaves, hoisted above the content fields in this
  * order so every section's settings sit together at the top. */
-const SECTION_SETTING_KEYS = [ 'isDisabled', 'containerTag', 'id', 'classes' ];
+const SECTION_SETTING_KEYS = ['isDisabled', 'containerTag', 'id', 'classes'];
 
 /** @param {string} key @return {string} A heading for a group with no label. */
 function groupLabel(key) {
   return GROUP_LABELS[key] || key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+}
+
+/**
+ * The field path of `key` within its section, e.g. "text" + "title" ->
+ * "text.title". Matches the data-field paths the preview render emits, so the
+ * in-situ editor can find this control from an inline edit in the rendered page.
+ * @param {string|undefined} base - The parent object's path (undefined at root).
+ * @param {string|number} key - The leaf/group key.
+ * @return {string} The joined path.
+ */
+function joinPath(base, key) {
+  return base ? `${base}.${key}` : String(key);
+}
+
+/**
+ * Stamps a control with its field path so inline editing can drive it. Sets the
+ * attribute on the primary input/textarea/select inside `el` (skipped for
+ * multi-control widgets like multiselect, which no single path addresses).
+ * @param {HTMLElement} el - The rendered control (or its wrapper).
+ * @param {string} path - The field path.
+ * @return {HTMLElement} `el`, for chaining.
+ */
+function tagFieldPath(el, path) {
+  const control = el.matches('input, textarea, select') ? el : el.querySelector('input, textarea, select');
+  if (control) {
+    control.dataset.fieldPath = path;
+  }
+  return el;
 }
 
 /**
@@ -61,15 +89,17 @@ function groupLabel(key) {
  * @return {HTMLElement} The form-group element.
  */
 function renderLeaf(node, obj, key, onChange, ctx) {
+  const fieldPath = joinPath(ctx.path, key);
   // Widgets that build their own full layout return early; the rest produce a
   // single labelled control via INPUT_BUILDERS.
   if (node.widget === 'image' && ctx && typeof ctx.processFile === 'function') {
-    return renderImage(node, obj, key, onChange, ctx);
+    return tagFieldPath(renderImage(node, obj, key, onChange, ctx), fieldPath);
   }
   if (node.widget === 'checkbox') {
-    return renderCheckbox(node, obj, key, onChange);
+    return tagFieldPath(renderCheckbox(node, obj, key, onChange), fieldPath);
   }
   if (node.widget === 'multiselect') {
+    // A multiselect is many checkboxes with no single control; leave untagged.
     return renderMultiselect(node, obj, key, onChange);
   }
 
@@ -84,7 +114,7 @@ function renderLeaf(node, obj, key, onChange, ctx) {
   if (node.help) {
     group.append(hint(node.help));
   }
-  return group;
+  return tagFieldPath(group, fieldPath);
 }
 
 /**
@@ -214,7 +244,7 @@ function renderMultiselect(node, obj, key, onChange) {
   group.append(labelEl);
 
   if (!Array.isArray(obj[key])) {
-    obj[key] = Array.isArray(node.default) ? [ ...node.default ] : [];
+    obj[key] = Array.isArray(node.default) ? [...node.default] : [];
   }
   const options = document.createElement('div');
   options.className = 'multiselect-options';
@@ -378,6 +408,7 @@ function renderArray(node, obj, key, onChange, ctx) {
   // control (their order is irrelevant); every other array keeps move/remove.
   const isCtas = key === 'ctas';
   const singular = (node.label || groupLabel(key)).replace(/s$/, '');
+  const arrayPath = joinPath(ctx.path, key);
   const childCtx = { ...ctx, depth: (ctx.depth || 0) + 1 };
   const wrap = document.createElement('div');
   wrap.className = 'section-array';
@@ -441,9 +472,13 @@ function renderArray(node, obj, key, onChange, ctx) {
     controls.className = 'section-card-controls';
     controls.onclick = (e) => e.stopPropagation();
     const actions = isCtas
-      ? [ [ 'remove', '✕', 'Remove' ] ]
-      : [ [ 'up', '↑', 'Move up' ], [ 'down', '↓', 'Move down' ], [ 'remove', '✕', 'Remove' ] ];
-    for (const [ act, symbol, title ] of actions) {
+      ? [['remove', '✕', 'Remove']]
+      : [
+          ['up', '↑', 'Move up'],
+          ['down', '↓', 'Move down'],
+          ['remove', '✕', 'Remove']
+        ];
+    for (const [act, symbol, title] of actions) {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'button secondary small section-card-control';
@@ -458,7 +493,7 @@ function renderArray(node, obj, key, onChange, ctx) {
           obj[key].splice(index, 1);
         } else {
           const to = act === 'up' ? index - 1 : index + 1;
-          [ obj[key][index], obj[key][to] ] = [ obj[key][to], obj[key][index] ];
+          [obj[key][index], obj[key][to]] = [obj[key][to], obj[key][index]];
         }
         renderItems();
         onChange();
@@ -469,7 +504,7 @@ function renderArray(node, obj, key, onChange, ctx) {
 
     const body = document.createElement('div');
     body.className = 'section-array-item-body';
-    body.append(renderFields(node.items, item, onChange, childCtx));
+    body.append(renderFields(node.items, item, onChange, { ...childCtx, path: `${arrayPath}.${index}` }));
 
     itemEl.append(header, body);
   };
@@ -525,7 +560,7 @@ export function renderFields(fields, values, onChange, ctx = {}) {
       }
     }
   }
-  for (const [ key, node ] of Object.entries(fields)) {
+  for (const [key, node] of Object.entries(fields)) {
     if (isTopLevel && SECTION_SETTING_KEYS.includes(key)) {
       continue; // already rendered first, above
     }
@@ -567,7 +602,7 @@ export function renderFields(fields, values, onChange, ctx = {}) {
  * @return {{ key: string, variants: Set<string> }|null}
  */
 function findDiscriminator(fields) {
-  for (const [ key, node ] of Object.entries(fields)) {
+  for (const [key, node] of Object.entries(fields)) {
     if (!isLeaf(node) || node.widget !== 'select' || !Array.isArray(node.enum)) {
       continue;
     }
@@ -609,6 +644,8 @@ function renderGroup(key, node, groupValues, onChange, ctx) {
   summary.className = 'section-field-group-label';
   summary.textContent = node.label || groupLabel(key);
   details.append(summary);
-  details.append(renderFields(node, groupValues, onChange, { ...ctx, depth: depth + 1 }));
+  details.append(
+    renderFields(node, groupValues, onChange, { ...ctx, depth: depth + 1, path: joinPath(ctx.path, key) })
+  );
   return details;
 }

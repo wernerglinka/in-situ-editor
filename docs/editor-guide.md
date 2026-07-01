@@ -172,10 +172,39 @@ it before you publish — image URLs are derived from it, and an untitled
 draft files its images under `untitled/`. Everything re-derives live as
 you type, so renaming before publish is harmless.
 
-The right-hand pane shows the document that publishing will commit: the
-post's structured frontmatter in YAML. (An in-browser preview of the
-rendered page is planned to replace it.) It updates a moment after every
-edit. Note that long lines are clipped at the pane's edge.
+The right-hand pane previews the page, updating a moment after every edit.
+It has two views, switched by the **Rendered** / **YAML** buttons at its top:
+
+- **Rendered** (the default) shows the actual page, drawn by the site's own
+  templates and styles inside a frame — the same render publishing produces, so
+  the preview is what you get. Sections that pull from the site's own content
+  (related posts, collection lists, the author block) render with real data from
+  the last deploy. The parts that depend on where the page will sit in its
+  collection — previous/next collection links, and a collection list's page
+  numbers — can't be known for an unsaved draft, so those render empty or
+  unpaginated until the page is published.
+- **YAML** shows the structured frontmatter document that publishing will
+  commit, handy for checking exactly what a section emits. Long lines are
+  clipped at the pane's edge.
+
+The rendered view needs the local preview server running. Start the site with
+`netlify dev` (not the plain dev server) so the render endpoint is available; if
+it is not reachable the pane says so and the YAML view still works.
+
+## Editing in the preview
+
+In the rendered view you can edit a section's text straight on the page. Hover a
+title, lead-in, subtitle, image caption, or call-to-action button label and it
+highlights; click to place the cursor, type, and click away (or press Enter) to
+commit. This works for slider slides too, and clicking a button in the preview
+edits its label rather than following the link. The change flows to the matching form field, so the two stay in step
+and it saves like any other edit. Prose is Markdown, so clicking a prose block
+opens the Markdown editor overlay rather than editing in place.
+
+This edits text that is already there; adding a field that's currently empty, or
+anything structural (adding, reordering, or removing sections, choosing images),
+is still done in the form on the left. A structural change takes the moment the
+preview needs to re-render; a text tweak shows as you type.
 
 ## The Markdown editor
 

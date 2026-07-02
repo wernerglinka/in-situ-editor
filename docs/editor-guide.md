@@ -132,10 +132,20 @@ anywhere on a section's header to open or close its form (the ↑/↓/✕
 controls in the header act on the section without toggling it); a section
 you just added opens automatically so you can fill it in.
 
-The drafts panel on the left and the live preview on the right each collapse
-from the toolbar toggles (**Drafts** and **Preview**) above the form.
-Hide both for a full-width, distraction-free editor; the choice is remembered
-per browser.
+The toolbar at the top holds three buttons. **Page setup** and **Page**
+switch the main area between two views: **Page setup** shows this form
+(metadata, sections, settings), and **Page** shows the rendered page you
+edit on directly — only one is up at a time. **Drafts** is separate: it
+shows or hides the list on the left alongside whichever view you are in.
+The document actions — Copy Markdown, Save, and Publish — live in a bar
+along the bottom of the editor that stays on screen as you scroll.
+
+A page that already has sections opens on the **Page** view: for reading
+and text edits the page itself is the whole editor, and you switch to
+**Page setup** for structure or metadata. A new draft (or a simple
+Markdown page) opens on **Page setup**, since an empty page gives you
+nothing to click. Once you pick a view yourself the editor remembers your
+choice per browser instead of choosing for you.
 
 Every section generates its form from the component library's schema rather
 than from hand-written editor code, which is why each exposes the full set of
@@ -202,9 +212,10 @@ one-line reminder of what to run. Restart under `netlify dev`, reload the admin,
 and the Rendered view returns to whichever mode you last used. This greying-out
 is localhost-only — it never happens on the deployed site.
 
-## Editing in the preview
+## Editing on the page
 
-In the rendered view you can edit a section's text straight on the page. Hover a
+In the rendered view you can edit a section's text straight on the page —
+this is the editor's default face for an existing sections page. Hover a
 title, lead-in, subtitle, image caption, or call-to-action button label and it
 highlights; click to place the cursor, type, and click away (or press Enter) to
 commit. This works for slider slides too, and clicking a button in the preview
@@ -214,7 +225,7 @@ opens the Markdown editor overlay rather than editing in place.
 
 This edits text that is already there; adding a field that's currently empty, or
 anything structural (adding, reordering, or removing sections, choosing images),
-is still done in the form on the left. A structural change takes the moment the
+is done in **Page setup**. A structural change takes the moment the
 preview needs to re-render; a text tweak shows as you type.
 
 ## The Markdown editor
